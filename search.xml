@@ -420,28 +420,55 @@
       </tags>
   </entry>
   <entry>
-    <title>flink</title>
-    <url>/2020/06/07/%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8B%BC%E6%8E%A5-1/</url>
-    <content><![CDATA[<h1 id="字符串拼接"><a href="#字符串拼接" class="headerlink" title="字符串拼接"></a>字符串拼接</h1>]]></content>
-      <categories>
-        <category>language</category>
-      </categories>
-      <tags>
-        <tag>python</tag>
-        <tag>language</tag>
-        <tag>go</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>flink定制jvm监控metrics</title>
     <url>/2020/06/07/flink%E5%AE%9A%E5%88%B6jvm%E7%9B%91%E6%8E%A7metrics/</url>
-    <content><![CDATA[]]></content>
+    <content><![CDATA[<h1 id="flink定制jvm监控metrics"><a href="#flink定制jvm监控metrics" class="headerlink" title="flink定制jvm监控metrics"></a>flink定制jvm监控metrics</h1>]]></content>
       <categories>
         <category>flink</category>
       </categories>
       <tags>
         <tag>flink</tag>
         <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hadoop集群以及Hive服务部署中的坑</title>
+    <url>/2020/06/07/Hadoop%E9%9B%86%E7%BE%A4%E4%BB%A5%E5%8F%8AHive%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2%E4%B8%AD%E7%9A%84%E5%9D%91/</url>
+    <content><![CDATA[<h1 id="Hadoop集群以及Hive服务部署中的坑"><a href="#Hadoop集群以及Hive服务部署中的坑" class="headerlink" title="Hadoop集群以及Hive服务部署中的坑"></a>Hadoop集群以及Hive服务部署中的坑</h1><p>部署hive的版本必须和hadoop的版本匹配, 具体对应关系可以从官方文档中找到说明, 主要就是因为lib库的差异导致的. 两者必须运行在相同的java环境下. hive2.x.x不能适用与hadoop3.x.x</p>
+<a id="more"></a>
+<p>由于hadoop是同一份配置多机拷贝部署的, 那么就需要保持数据节点和master的namenode节点的配置一致性. </p>
+<p>hadoop部署的节点机器一定要具有相互ssh访问的权限, 必须事先定义好publickey互访. 同时在每个节点上都得有整个集群的hosts信息(或者直接在路由上指定), 必须保证每个节点都可以通过其他节点的hostname访问到其他节点. 需要注意的是<code>/etc/hosts</code>文件中最好是没有指向本地localhost的配置,即不要出现<code>127.0.0.1 localhost</code>之类的配置. 在配置好ssh和hosts后,确保在每台机器上都能成功通过hostname进行ssh publickey访问. 如果ssh不是默认22端口 可以通过在hadoop的配置文件<code>hadoop-env.sh</code>中设置<code>export HADOOP_SSH_OPTS=&quot;-p 26387 -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=10s&quot;</code> 同时在该文件中也需要执行hadoop运行的用户:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export HDFS_NAMENODE_USER&#x3D;&quot;root&quot;</span><br><span class="line">export HDFS_DATANODE_USER&#x3D;&quot;root&quot;</span><br><span class="line">export HDFS_SECONDARYNAMENODE_USER&#x3D;&quot;root&quot;</span><br><span class="line">export YARN_RESOURCEMANAGER_USER&#x3D;&quot;root&quot;</span><br><span class="line">export YARN_NODEMANAGER_USER&#x3D;&quot;root&quot;</span><br></pre></td></tr></table></figure>
+
+<p>hadoop的默认配置在代码目录下的<code>etc/hadoop</code>下,需要修改定义xml 文件, 根据官方手册填写对应的配置,注意涉及到节点信息的地方都不用ip地址而是必须使用hostname.(除了外部访问地址)</p>
+<p>hadoop集群启动使用<code>sbin/start-all.sh</code>, 而且只需要在namenode上执行, 不需要在每个节点上都执行,.但是启动后需要通过<code>jps</code>查看java进程确保每个数据节点上都有数据服务和调度程序, 同时确保namenode 上的调度yarn调度器正确启动. 有时会出现一个进程不能正确启动, 需要到对应的节点上通过查看hadoop日志文件排查原因, 并通过<code>stop-all.sh</code> &amp;<code>start-all.sh</code>两个脚本重新执行一次启动集群.或者单独执行<code>start-yarn.sh</code>等</p>
+<p>hive只需要部署在hadoop的一个数据节点上就行, 但是 由于hive server服务使用root访问是需要有hadoop访问权限的,因此在hadoop的配置中必须加入</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">     &lt;name&gt;hadoop.proxyuser.root.groups&lt;&#x2F;name&gt;</span><br><span class="line">     &lt;value&gt;*&lt;&#x2F;value&gt;</span><br><span class="line">   &lt;&#x2F;property&gt;</span><br><span class="line">   &lt;property&gt;</span><br><span class="line">     &lt;name&gt;hadoop.proxyuser.root.hosts&lt;&#x2F;name&gt;</span><br><span class="line">     &lt;value&gt;*&lt;&#x2F;value&gt;</span><br><span class="line">   &lt;&#x2F;property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>hadoop的map-reduce执行方式的执行个数通过</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;mapreduce.job.reduces&lt;&#x2F;name&gt;</span><br><span class="line">  &lt;value&gt;4&lt;&#x2F;value&gt;</span><br><span class="line">  &lt;description&gt;reduce个数&lt;&#x2F;description&gt;</span><br><span class="line">&lt;&#x2F;property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;mapreduce.job.maps&lt;&#x2F;name&gt;</span><br><span class="line">  &lt;value&gt;4&lt;&#x2F;value&gt;</span><br><span class="line">  &lt;description&gt;map个数&lt;&#x2F;description&gt;</span><br><span class="line">&lt;&#x2F;property&gt;</span><br></pre></td></tr></table></figure>
+<p>设置, 但是其值最好设定为集群数据节点数量的0.95倍. 同时为了加速执行, 可以把预测执行<code>mapreduce.map.speculative</code>和<code>mapreduce.reduce.speculative</code>关闭, 并且使用<code>mapreduce.output.fileoutputformat.compress</code>开启中间数据压缩.</p>
+<p>hive的配置文件最好和其版本保持一致, 不同版本的配置文件小有出入. 在<code>hive-env.sh</code>中使用<code>HADOOP_OPTS</code>来配置hive的java运行环境参数, 其中<code>Xmx和Xms</code>根据实际机器的内存配置设定.  而<code>hive-site.xml</code> 配置文件可以通过模板<code>hive-default.xml</code>来修改生成.  </p>
+<p>需要注意的是每次修改配置后都需要重启hive server2服务或者退出hive cli来生效配置, 同时注意已经启动的hive server2数量, 如果启动了多个服务, 可能会出现混乱的结果, 请确保节点上只有一个hive server2</p>
+]]></content>
+      <categories>
+        <category>devops</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>hadoop</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>比较[]int的方法实现</title>
+    <url>/2020/06/07/%E5%88%A4%E6%96%AD%5B%5Dint%E7%9B%B8%E7%AD%89%E7%9A%84%E6%96%B9%E6%B3%95%E5%AE%9E%E7%8E%B0/</url>
+    <content><![CDATA[<h1 id="判断-int相等的方法实现"><a href="#判断-int相等的方法实现" class="headerlink" title="判断[]int相等的方法实现"></a>判断[]int相等的方法实现</h1>]]></content>
+      <categories>
+        <category>language</category>
+      </categories>
+      <tags>
+        <tag>language</tag>
+        <tag>go</tag>
       </tags>
   </entry>
 </search>
