@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"woodpenker.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="shell学习笔记 检测变量是否存在：${varname? ERR:something}若varname变量未定义则报错后面错误信息”ERR:…”  bash4.0 新特性: {1..10..2}从1自增到10每次加2  d{a,b,c}代表da,db,dc  ~+代表PWD值&#x2F;~-代表LODPWD值  bash 没有设置-f会支持文件名扩展类似正则:* ? [ ]  bash 提示符带有颜色:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="shell学习笔记">
+<meta property="og:url" content="https://woodpenker.github.io/2020/06/07/shell-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="woodpenker&#39;s blog">
+<meta property="og:description" content="shell学习笔记 检测变量是否存在：${varname? ERR:something}若varname变量未定义则报错后面错误信息”ERR:…”  bash4.0 新特性: {1..10..2}从1自增到10每次加2  d{a,b,c}代表da,db,dc  ~+代表PWD值&#x2F;~-代表LODPWD值  bash 没有设置-f会支持文件名扩展类似正则:* ? [ ]  bash 提示符带有颜色:">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-06-07T04:54:59.979Z">
+<meta property="article:modified_time" content="2020-06-07T05:06:03.550Z">
+<meta property="article:author" content="woodpenker">
+<meta property="article:tag" content="linux">
+<meta property="article:tag" content="shell">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://woodpenker.github.io/2020/06/07/shell-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>shell学习笔记 | woodpenker's blog</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-156045206-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-156045206-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">woodpenker's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">while(life_left!=0){study++;}</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/woodpenker" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2020/06/07/shell-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="woodpenker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="woodpenker's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          shell学习笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2020-06-07 12:54:59 / Modified: 13:06:03" itemprop="dateCreated datePublished" datetime="2020-06-07T12:54:59+08:00">2020-06-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>10k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="shell学习笔记"><a href="#shell学习笔记" class="headerlink" title=" shell学习笔记"></a> shell学习笔记</h1><ol>
+<li><p>检测变量是否存在：<code>${varname? ERR:something}</code>若varname变量未定义则报错后面错误信息”ERR:…”</p>
+</li>
+<li><p>bash4.0 新特性: <code>{1..10..2}</code>从1自增到10每次加2</p>
+</li>
+<li><p><code>d{a,b,c}</code>代表da,db,dc</p>
+</li>
+<li><p><code>~+</code>代表PWD值/<code>~-</code>代表LODPWD值</p>
+</li>
+<li><p>bash 没有设置-f会支持文件名扩展类似正则:<code>* ? [ ]</code></p>
+</li>
+<li><p>bash 提示符带有颜色: <code>&quot;\e[0;34m ...  \e[m&quot;</code><br><code>\e[ 指示开始 0;34m代表颜色代码 \e[m 指示结束</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">0;30 黑色 </span><br><span class="line">0;34蓝色 </span><br><span class="line">0;32绿色 </span><br><span class="line">0;36 青色 </span><br><span class="line">0;31 红色 </span><br><span class="line">0;35 紫色 </span><br><span class="line">0;33 褐色</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>tput</code> 命令设置提示符 <code>bold</code>粗体 <code>rev</code>反转 <code>sgr0</code>关闭所有属性 <code>setaf</code>设置前色<code>setab</code> 设置背景色 0黑 1红 2绿 3黄 4蓝 5洋红 6青 7白</p>
+</li>
+<li><p><code>set -o</code>开启bash特性 +o关闭</p>
+</li>
+<li><p>linux不允许给目录创建硬链接<code>ln</code>不能对目录使用,只能加<code>-s</code>创建软连接</p>
+</li>
+<li><p><code>/dev/null</code>是linux的特殊dev文件,是一个黑洞,不想要的东西都可以写进这里.它读不出任何数据.</p>
+</li>
+<li><p><code>tar</code>可以加<code>--wildcards</code>与<code>-xvf</code>提取制定模式的一组文件或目录如 <code>--wildcards &#39;*.jpg&#39;</code></p>
+</li>
+<li><p><code>lsof</code>或<code>fuser</code>可以查看mount的文件系统被哪个进程占用</p>
+</li>
+<li><p><code>atq</code>与<code>at -l</code>功能相同</p>
+</li>
+<li><p><code>nohup command [arg]  &amp;</code> 运行一个对挂起免疫的后台任务</p>
+</li>
+<li><p>bash间接扩展参数:<code>${!B}</code>如果B的值是某个变量参数A的名字,那么该式值是参数A的值而不是B的值</p>
+</li>
+<li><p>bash内部变量:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">a. $BASH bash全路径; </span><br><span class="line">b. $IFS 内部字段分隔符,默认值:&quot;&lt;space&gt;&lt;tab&gt;&lt;newline&gt;&quot;;空格 tab 新行 ; </span><br><span class="line">c. $OSTYPE 操作系统类型 ;</span><br><span class="line">d. $SECONDS 脚本已运行秒数;</span><br><span class="line">e. $TMOUT 如非0则作为命令read的默认超时秒数; </span><br><span class="line">f. $UID 当前用户账号ID</span><br><span class="line">g. $LINENO shell脚本当前行号</span><br><span class="line">h. $FUNCNAME 当前执行调用堆栈的所有shell函数名数组,$&#123;FUNCNAME[0]&#125;代表当前正在执行shell函数名称,$&#123;FUNCNAME[1]&#125;代表调用			$&#123;FUNCNAME[0]&#125;的函数的名字</span><br><span class="line">i. $PS4 bash -x 时显示的默认+号值</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>bash参数 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">a. $1 $2 ... 10以上是用&#123;&#125; 即$&#123;10&#125; </span><br><span class="line">b. $* 代表$1c$2c.... c是IFS的第一个字符,默认空白 常用用法: for arg in $*</span><br><span class="line">c. &quot;$@&quot; 等价与 &quot;$1&quot; &quot;$2&quot;...每个都是分割的单词 常用用法: for arg in &quot;$@&quot;</span><br><span class="line">d. $&amp;#35; 参数个数</span><br><span class="line">e. $! 最后一次执行的后台命令进程号</span><br><span class="line">f. $0 shell脚本名称</span><br><span class="line">g. $? 最近一次前台执行命令的退出状态</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>declare 申明变量 -i 代表整型 -r 只读 -p 显示属性和值 -a 申明数组 </p>
+</li>
+<li><p>数组也可又<code>$arr=(a1 b2 c3)</code>定义,引用数组必须加{}, @ <em>表示数组所有成员,如 `${arr[2]} /${arr[</em>]} `.不指定索引默认第一个元素 $arr值是a1</p>
+</li>
+<li><p>数字常量:0x开头表示16进制, 0开头表示8进制 , <code>BASE&amp;#35;NUMBER</code>表示BASE进制的数NUMBER 如<code>12&amp;#35;234</code> 表示12进制的234</p>
+</li>
+<li><p>let 进行算数运算<code>let &quot;i=i + 5&quot;</code></p>
+</li>
+<li><p>expr进行表达式求值并输出</p>
+</li>
+<li><p>shell返回的状态码0~255间整数,shell每行代码不多于80字符</p>
+</li>
+<li><p>[[]]仅在bash /zsh/ korn shell 中可用,[]在所有符合POSIX标准的shell下可用 </p>
+</li>
+<li><p>test命令:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">1）判断表达式</span><br><span class="line">　　if test  (表达式为真)</span><br><span class="line">　　if test !表达式为假</span><br><span class="line">　　test 表达式1 –a 表达式2                  两个表达式都为真</span><br><span class="line">　　test 表达式1 –o 表达式2                 两个表达式有一个为真</span><br><span class="line">　　2）判断字符串</span><br><span class="line">　　test –n 字符串                                   字符串的长度非零</span><br><span class="line">　　test –z 字符串                                    字符串的长度为零</span><br><span class="line">　　test 字符串1＝字符串2                    字符串相等</span><br><span class="line">　　test 字符串1！＝字符串2               字符串不等</span><br><span class="line">　　3）判断整数</span><br><span class="line">　　test 整数1 –eq 整数2                        整数相等</span><br><span class="line">　　test 整数1 –ge 整数2                        整数1大于等于整数2</span><br><span class="line">　　test 整数1 –gt 整数2                         整数1大于整数2</span><br><span class="line">　　test 整数1 –le 整数2                         整数1小于等于整数2</span><br><span class="line">　　test 整数1 –lt 整数2                          整数1小于整数2</span><br><span class="line">　　test 整数1 –ne 整数2                        整数1不等于整数2</span><br><span class="line">　　4）判断文件</span><br><span class="line">　　test  File1 –ef  File2                            两个文件具有同样的设备号和i结点号</span><br><span class="line">　　test  File1 –nt  File2                            文件1比文件2 新</span><br><span class="line">　　test  File1 –ot  File2                            文件1比文件2 旧</span><br><span class="line">　　test –b File                                           文件存在并且是块设备文件</span><br><span class="line">　　test –c File                                           文件存在并且是字符设备文件</span><br><span class="line">　　test –d File                                           文件存在并且是目录</span><br><span class="line">　　test –e File                                           文件存在</span><br><span class="line">　　test –f File                                            文件存在并且是正规文件</span><br><span class="line">　　test –g File                                           文件存在并且是设置了组ID</span><br><span class="line">　　test –G File                                           文件存在并且属于有效组ID</span><br><span class="line">　　test –h File                                           文件存在并且是一个符号链接（同-L）</span><br><span class="line">　　test –k File                                           文件存在并且设置了sticky位</span><br><span class="line">　　test –b File                                           文件存在并且是块设备文件</span><br><span class="line">　　test –L File                                           文件存在并且是一个符号链接（同-h）</span><br><span class="line">　　test –o File                                           文件存在并且属于有效用户ID</span><br><span class="line">　　test –p File                                           文件存在并且是一个命名管道</span><br><span class="line">　　test –r File                                            文件存在并且可读</span><br><span class="line">　　test –s File                                           文件存在并且是一个套接字</span><br><span class="line">　　test –t FD                                             文件描述符是在一个终端打开的</span><br><span class="line">　　test –u File                                           文件存在并且设置了它的set-user-id位</span><br><span class="line">　　test –w File                                          文件存在并且可写</span><br><span class="line">　　test –x File                                           文件存在并且可执行</span><br></pre></td></tr></table></figure></li>
+<li><p><code>break [n]</code>n表示跳出n层嵌套循环.没有n或n小于1,退出码0,否则退出码为n</p>
+</li>
+<li><p>linux下正在运行的进程,会在/proc下存在以进程号命名的子目录,<code>/proc/[PID]/fd</code>的每一个条目对应一个该进程打开的文件,用文件描述符命名,并软连接到实际文件</p>
+</li>
+<li><p>函数  </p>
+<ol>
+<li>创建函数一定要在调用函数之前</li>
+<li>function_name() 或者 function name        //function是关键字 name 后面可以省略()<br>{<br>commands…<br>[return int;] 返回值0~255 没有则默认返回最后一条指令运行返回值<br>}</li>
+<li>函数自己使用$1 $2 … 作为传递的参数 $* $@ 代表所有的传递的参数 $&#35;传递给函数参数个数</li>
+<li>shell默认情况下所有变量都是全局变量,函数内可使用local定义内部变量,local只能在函数体内使用</li>
+<li>在脚本中加载函数文件中的函数 使用 点好. 或者source如: . /path/function.sh 或source /path/function.sh</li>
+<li>调用函数直接输入名称,不加() </li>
+<li>&amp;可以将函数放在后台运行</li>
+</ol>
+</li>
+<li><p>bash正则</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">*： 代表 0 个或者多个任意字符</span><br><span class="line">?： 代表一定有一个的任意字符</span><br><span class="line">[]： 代表一定有一个在括号内的字符（非任意字符）。例如[abcd]代表一定有一个字符，可能是 abcd 这四个选项的任意一个。</span><br><span class="line">[-]：若邮件韩在括号内时，代表在编码顺序内的所有自负。例如：[0-9]代表 0 到 9 之间的所有数字，因为数字的语系编码是连续的。</span><br><span class="line">[^]： 若括号内的第一个字符为指数字符(^)，那表示反向选择，例如：[^abc]代表一定有一个字符，只要是非 abc 的其他字符就可以。</span><br><span class="line">^：匹配行首位置</span><br><span class="line">$：匹配行尾位置</span><br><span class="line">.：匹配任意祖父</span><br><span class="line">*：对*之前的匹配整体或字符匹配任意次（包括 0 次）</span><br><span class="line">\?：对\?之前的匹配整体或字符匹配 0 次或 1 次</span><br><span class="line">\&#123;n\&#125;: 对 \ &#123; 之前的匹配整体或字符匹配 n 次</span><br><span class="line">\&#123;m,\&#125;: 对 \ &#123; 之前的匹配整体或字符匹配至少 m 次</span><br><span class="line">\&#123;m,n&#125;: 对 \ &#123; 之前的匹配整体或字符匹配 m 到 n 次</span><br><span class="line">\&lt;\&gt;匹配单词边界,如:\&lt;the\&gt;只匹配 the 不匹配then</span><br><span class="line">[abcdef]: 对单字符而言匹配[]中的字符</span><br><span class="line">[a-z]： 对单字符而言，匹配任意一个小写字母</span><br><span class="line">[^a-z]：不匹配括号中的内容</span><br><span class="line">+ :重复『一个或一个以上』的前一个 RE 字符,与*类似 但不包括0个字符的情况</span><br><span class="line">?：『零个或一个』的前一个 RE 字符</span><br><span class="line">|：用或( or )的方式找出数个字串</span><br><span class="line">()：找出『群组』字串与| 一起使用</span><br><span class="line">()+：多个重复群组的判别</span><br></pre></td></tr></table></figure>
+
+<p>POSIX字符类:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[:alnum:]	字母数字字符</span><br><span class="line">[:alpha:]	字母字符</span><br><span class="line">[:cntrl:]	控制字符</span><br><span class="line">[:digit:]	数字字符</span><br><span class="line">[:graph:]	非空白字符(非空格、控制字符等)</span><br><span class="line">[:lower:]	小写字母</span><br><span class="line">[:print:]	与[:graph:]相似，但是包含空格字符</span><br><span class="line">[:punct:]	标点字符</span><br><span class="line">[:space:]	所有的空白字符(换行符、空格、制表符)</span><br><span class="line">[:upper:]	大写字母</span><br><span class="line">[:xdigit:]	允许十六进制的数字(0-9a-fA-F)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>关闭脚本case语句对参数大小写敏感:在case前加入语句shopt -s nocasematch 重新打开用 shopt -u nocasematch</p>
+</li>
+<li><p>shift [n] 命令向左移动参数变量,n代表每次移动位数, shift后一般加对$?的值做判断语句来检查shift是否被执行</p>
+</li>
+<li><p>getopts (bash内置)的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a. 使用形式是：getopts option_string variable.getopts一共有两个参数，第一个是-a这样的选项，第二个参数是 hello这样的参数。</span><br><span class="line">b. 选项之间可以通过冒号:进行分隔，也可以直接相连接，：表示选项后面必须带有参数，如果没有可以不加实际值进行传递.</span><br><span class="line">c. 当optstring以”:”开头时，getopts会区分invalid option错误和miss option argument错误。</span><br><span class="line">d. 如果optstring不以”:“开头，invalid option错误和miss option argument错误都会使varname被设成?，$OPTARG是出问题的option。</span><br></pre></td></tr></table></figure></li>
+<li><p>getopt(命令行命令) 命令的选项说明：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-a 使getopt长参数支持&quot;-&quot;符号打头，必须与-l同时使用</span><br><span class="line">-l 后面接getopt支持长参数列表.选项用逗号分割,&quot;:&quot;表示选项需要一个参数,&quot;::&quot;表示选项有个可选参数</span><br><span class="line">-n program如果getopt处理参数返回错误，会指出是谁处理的这个错误，这个在调用多个脚本时，很有用</span><br><span class="line">-o 后面接短参数列表，这种用法与getopts类似.每个字符代表一个选项,&quot;:&quot;表示选项需要一个参数,&quot;::&quot;表示选项有个可选参数</span><br><span class="line">-u 不给参数列表加引号，默认是加引号的（不使用-u选项），例如在加不引号的时候 --longopt &quot;select * from db1.table1&quot; $2只会取到select ，而不是完整的SQL语句。</span><br></pre></td></tr></table></figure>
+<p>使用eval 的目的是为了防止参数中有shell命令，被错误的扩展。<br>样例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">ARGV&#x3D;($(getopt -o 短选项1[:]短选项2[:]...[:]短选项n -l 长选项1,长选项2,...,长选项n -- &quot;$@&quot;))</span><br><span class="line">eval set -- &quot;$ARGV&quot;</span><br><span class="line">while true</span><br><span class="line"> do</span><br><span class="line">    case &quot;$1&quot; in</span><br><span class="line">     -短选项1|--长选项1)</span><br><span class="line">         process</span><br><span class="line">        shift</span><br><span class="line">        ;;</span><br><span class="line">    -短选项2|--长选项2)</span><br><span class="line">         &amp;#35; 获取选项</span><br><span class="line">         opt &#x3D; $2</span><br><span class="line">         process</span><br><span class="line">        shift 2</span><br><span class="line">        ;;</span><br><span class="line">     ......</span><br><span class="line">    -短选项3|--长选项3)</span><br><span class="line">         process</span><br><span class="line">         ;;</span><br><span class="line">     --)</span><br><span class="line"> break</span><br><span class="line">;;</span><br><span class="line"> esac</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>read 读入用户输入 -p 在输入前显示信息 -t 输入超时设置 -s隐藏用户输入 </p>
+</li>
+<li><p>重定向:<br>a. cat将输出接管道|进行输入数据的方法会不好,最好让你的程序从标准输入读取数据用&lt;,这样用户就可以使用重定向来获取数据.<br>b. 从文本输入用&lt;&lt;EOF格式,结束标识是EOF,必须写在行首.<br>c. &lt;&lt;&lt;用于输入重定向的普通字符串,后面接的就是要输入的字符<br>d. 0 输入 1 输出 2错误<br>e. 同时重定向 “&amp;&gt;” “&gt;&amp;” “2&gt;&amp;1” 追加用 &gt;&gt;<br>f. 在shell中最多可以有9个打开的文件描述符0-8.exec 用于操作文件描述符,如exec 2&gt;err.log.符号&lt;&amp;可以复制一个输入文件描述符，符号&gt;&amp;可以复制一个输出描述符。exec n&lt;&amp;- 关闭文件描述符.exec [n] &lt;&gt;file 打开读写文件</p>
+</li>
+<li><p>管道|与重定向的区别是,管道是将第一个命令的输出作为第二个的输入,而重定向是将命令与文件链接.</p>
+</li>
+<li><p>常用的管道过滤命令: awk,cut, grep, tar , head 取文件开头,paste 合并文件行, sed ,sort 行排序, split 文件分割, strings 打印文件中可打印的字符串, tac 与cat相反 倒序显示文件,tail 显示文件结尾 , tee 从标准输入读取内容并写入标准文件或输出, tr 转换或删除字符, uniq 报告或忽略重复的行, wc 统计行数字数等,column进行输出的表格格式化.</p>
+</li>
+<li><p>posix信号:<br>在linux下的:       </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">   1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP</span><br><span class="line"> 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1</span><br><span class="line">11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM</span><br><span class="line">16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP</span><br><span class="line">21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ</span><br><span class="line">26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR</span><br><span class="line">31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3</span><br><span class="line">38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8</span><br><span class="line">43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13</span><br><span class="line">48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12</span><br><span class="line">53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7</span><br><span class="line">58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2</span><br><span class="line">63) SIGRTMAX-1	64) SIGRTMAX	</span><br><span class="line">信号	     	取值		默认动作	含义（发出信号的原因）</span><br><span class="line">SIGHUP		1	Term	终端的挂断或进程死亡</span><br><span class="line">SIGINT		2	Term	来自键盘的中断信号</span><br><span class="line">SIGQUIT		3	Core	来自键盘的离开信号</span><br><span class="line">SIGILL		4	Core	非法指令</span><br><span class="line">SIGABRT	6	Core	来自abort的异常信号</span><br><span class="line">SIGFPE		8	Core	浮点例外</span><br><span class="line">SIGKILL		9	Term	杀死</span><br><span class="line">SIGSEGV	11	Core	段非法错误(内存引用无效)</span><br><span class="line">SIGPIPE		13	Term	管道损坏：向一个没有读进程的管道写数据</span><br><span class="line">SIGALRM	14	Term	来自alarm的计时器到时信号</span><br><span class="line">SIGTERM	15	Term	终止</span><br><span class="line">SIGUSR1	30,10,16	Term	用户自定义信号1</span><br><span class="line">SIGUSR2	31,12,17	Term	用户自定义信号2</span><br><span class="line">SIGCHLD	20,17,18	Ign	子进程停止或终止</span><br><span class="line">SIGCONT	19,18,25	Cont	如果停止，继续执行</span><br><span class="line">SIGSTOP	17,19,23	Stop	非来自终端的停止信号</span><br><span class="line">SIGTSTP		18,20,24	Stop	来自终端的停止信号</span><br><span class="line">SIGTTIN		21,21,26	Stop	后台进程读终端</span><br><span class="line">SIGTTOU	22,22,27	Stop	后台进程写终端</span><br><span class="line">　			　</span><br><span class="line">SIGBUS		10,7,10	Core	总线错误（内存访问错误）</span><br><span class="line">SIGPOLL		Term	Pollable	事件发生(Sys V)，与SIGIO同义</span><br><span class="line">SIGPROF	27,27,29	Term	统计分布图用计时器到时</span><br><span class="line">SIGSYS		12,-,12	Core	非法系统调用(SVr4)</span><br><span class="line">SIGTRAP	5		Core	跟踪&#x2F;断点自陷</span><br><span class="line">SIGURG		16,23,21	Ign	socket紧急信号(4.2BSD)</span><br><span class="line">SIGVTALRM	26,26,28	Term	虚拟计时器到时(4.2BSD)</span><br><span class="line">SIGXCPU	24,24,30	Core	超过CPU时限(4.2BSD)</span><br><span class="line">SIGXFSZ		25,25,31	Core	超过文件长度限制(4.2BSD)</span><br><span class="line">　			　</span><br><span class="line">SIGIOT		6		Core	IOT自陷，与SIGABRT同义</span><br><span class="line">SIGEMT		7,-,7		Term</span><br><span class="line">SIGSTKFLT	-,16,-	Term	协处理器堆栈错误(不使用)</span><br><span class="line">SIGIO		23,29,22	Term	描述符上可以进行I&#x2F;O操作</span><br><span class="line">SIGCLD		-,-,18	Ign	与SIGCHLD同义</span><br><span class="line">SIGPWR		29,30,19	Term	电力故障(System V)</span><br><span class="line">SIGINFO		29,-,-			与SIGPWR同义</span><br><span class="line">SIGLOST	-,-,-		Term	文件锁丢失</span><br><span class="line">SIGWINCH	28,28,20	Ign	窗口大小改变(4.3BSD, Sun)</span><br><span class="line">SIGUNUSED	-,31,-	Term	未使用信号(will be SIGSYS)</span><br></pre></td></tr></table></figure>
+<p>一些信号的取值是硬件结构相关的（一般alpha和sparc架构用第一个值，i386、ppc和sh架构用中间值，mips架构用第三个值， - 表示相应架构的取值未知）。<br>SIGKILL和SIGSTOP信号不能被挂钩、阻塞或忽略。</p>
+</li>
+<li><p>disown -h %1 会阻止shell 向后台作业1发送SIGHUP信号,这时退出shell作业依旧会执行,如果用shopt打开了shell内部的huponexit,会在退出shell时默认向所有作业发送SIGHUP</p>
+</li>
+<li><p>进程的状态:<code>D 不可中断休眠 R运行 S 休眠 T 停止 Z 僵死</code></p>
+</li>
+<li><p>bash下:<br><code>Ctrl + C</code> 中断信号,发送SIGINT.<br><code>Ctrl+Y</code> 延时挂起,使运行的进程在尝试从终端读取数据时停止,控制权返回shell.<br><code>Ctrl+Z</code> 挂起信号,发送SIGTSTP,返回shell</p>
+</li>
+<li><p><code>(command1;command2;...)</code>内嵌在圆括号内部的命令列表,作为一个shell进程的子shell进程运行,其变量对外不可见,运行环境变量可设置不同.</p>
+</li>
+<li><p>捕获:<br>a. <code>trap command signal [signal ...]</code>捕获特定的信号进行处理 如<code>trap &quot;kill -9 $self &quot; SIGHUP</code> (在收到sinhup信号后立即杀死自己)<br>b. trap语句中若””内为空则不做响应,可用于屏蔽Ctrl+C 等<br>c. <code>trap - signal...</code> 用于重置默认模式,移除信号的捕获.</p>
+</li>
+</ol>
+<h2 id="sed手册"><a href="#sed手册" class="headerlink" title="sed手册"></a>sed手册</h2><p><a href="https://www.gnu.org/software/sed/manual/sed.html" target="_blank" rel="noopener">参考站点</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]&amp;#35; sed [-nefr] [动作]</span><br><span class="line">选项与参数：</span><br><span class="line">-n ：使用安静(silent)模式。在一般 sed 的用法中，所有来自 STDIN 的数据一般都会被列出到终端上。但如果加上 -n 参数后，则只有经过sed 特殊处理的那一行(或者动作)才会被列出来。</span><br><span class="line">-e ：直接在命令列模式上进行 sed 的动作编辑；</span><br><span class="line">-f ：直接将 sed 的动作写在一个文件内， -f filename 则可以运行 filename 内的 sed 动作；</span><br><span class="line">-r ：sed 的动作支持的是延伸型正规表示法的语法。(默认是基础正规表示法语法)</span><br><span class="line">-i ：直接修改读取的文件内容，而不是输出到终端。</span><br><span class="line">动作说明： [n1[,n2]]function</span><br><span class="line">n1, n2 ：不见得会存在，一般代表『选择进行动作的行数』，举例来说，如果我的动作是需要在 10 到 20 行之间进行的，则『 10,20[动作行为] 』</span><br><span class="line">function：</span><br><span class="line">a ：新增， a 的后面可以接字串，而这些字串会在新的一行出现(目前的下一行)～</span><br><span class="line">c ：取代， c 的后面可以接字串，这些字串可以取代 n1,n2 之间的行！</span><br><span class="line">d ：删除，因为是删除啊，所以 d 后面通常不接任何咚咚；</span><br><span class="line">i ：插入， i 的后面可以接字串，而这些字串会在新的一行出现(目前的上一行)；</span><br><span class="line">p ：列印，亦即将某个选择的数据印出。通常 p 会与参数 sed -n 一起运行～</span><br><span class="line">s ：取代，可以直接进行取代的工作哩！通常这个 s 的动作可以搭配正规表示法！例如 1,20s&#x2F;old&#x2F;new&#x2F;g 就是啦！</span><br></pre></td></tr></table></figure>
+
+<h2 id="awk"><a href="#awk" class="headerlink" title="awk "></a>awk </h2><p><a href="https://www.gnu.org/software/gawk/manual/gawk.html" target="_blank" rel="noopener">参考站点</a><br><code>awk &#39;{pattern + action}&#39; {filenames}</code><br>尽管操作可能会很复杂，但语法总是这样，其中<code>pattern</code>表示 AWK 在数据中查找的内容，而 <code>action</code>是在找到匹配内容时所执行的一系列命令。花括号<code>（{}）</code>不需要在程序中始终出现，但它们用于根据特定的模式对一系列指令进行分组。 pattern就是要表示的正则表达式，用斜杠括起来。<br>awk语言的最基本功能是在文件或者字符串中基于指定规则浏览和抽取信息，awk抽取信息后，才能进行其他文本操作。完整的awk脚本通常用来格式化文本文件中的信息。<br>通常，awk是以文件的一行为处理单位的。awk每接收文件的一行，然后执行相应的命令，来处理文本。<br>模式可以是以下任意一个：<code>/正则表达式/</code>：使用通配符的扩展集。 关系表达式：使用运算符进行操作，可以是字符串或数字的比较测试。 模式匹配表达式：用运算符<del>（匹配）和</del>!（不匹配）。 BEGIN语句块、pattern语句块、END语句块.</p>
+<h2 id="set"><a href="#set" class="headerlink" title="set --"></a><code>set --</code></h2><p>  表示:”If  no  arguments follow this option, then the positional parameters are unset.  Otherwise, the positional parameters are set  to the args, even if some of them begin with a -.”</p>
+<h2 id="shell-调用其他脚本"><a href="#shell-调用其他脚本" class="headerlink" title="shell 调用其他脚本"></a>shell 调用其他脚本</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"> 使用.&#x2F;1.sh 或者 sh 1.sh 执行后使用exit退出并返回 ,</span><br><span class="line"> . 1.sh 或 export 1.sh 执行后用return返回.</span><br><span class="line"> </span><br><span class="line">shell脚本中的函数类似使用.&#x2F;1.sh方式执行的,有输入变量和返回但返回用return</span><br><span class="line"></span><br><span class="line">所有shell return只能返回数字,如果需要返回字符串,在func中使用echo.</span><br><span class="line"></span><br><span class="line">用&quot;.&quot;或者export执行的相当于本脚本执行,变量通用.无须返回.</span><br></pre></td></tr></table></figure>
+
+<h2 id="echo和printf命令"><a href="#echo和printf命令" class="headerlink" title="echo和printf命令"></a>echo和printf命令</h2><p><code>echo -e &quot;1\t2\t3&quot;</code><br>显示结果为<code>123</code><br>echo 会自动在输出结尾加上一个\n回车,但是printf不会。<br>echo的-e命令表示需要转义，把\t转换成tab空格，-n命令会忽略输出结尾的回车。</p>
+<p><strong><em>echo打印彩色输出：</em></strong> <code>echo -e &quot;\e[1;31m this is red \e[0m&quot;</code><br>其中\e[1;31m表示颜色开始，\e[0m表示重置即结束。31代表红色，修改数字对应不同颜色：黑色30，红色31，绿色32，黄色33，蓝色34，洋红35，青色36，白色37。</p>
+<p>print命令和c语言的类似，<br><code>printf &quot;%-5s %-6.2f&quot; hello 43.2222</code>表示输出<code>hello 43.22</code>，<br>-表示左对齐，否组默认右对齐，数字是格式化位数。</p>
+<p><code>var=value</code>和<code>var = value</code> 不同，前者是赋值，后者是等于比较操作,注意中间的空格区分。</p>
+<p><strong><em>获取字符串长度</em></strong><br>采用<code>${&amp;#35;var}</code> var表示所要获取的字符串<br>例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">var=1234567890</span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$&#123;&amp;#35;var&#125;</span></span><br></pre></td></tr></table></figure>
+<p>输出：<code>&gt;10</code></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/linux/" rel="tag"># linux</a>
+              <a href="/tags/shell/" rel="tag"># shell</a>
+          </div>
+
+        
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<link rel="stylesheet" href="/css/highlight/styles/github.css">
+
+<!--
+ <script src="https://utteranc.es/client.js"
+        repo="woodpenker/woodpenker.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script> 
+-->
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/07/%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8B%BC%E6%8E%A5/" rel="prev" title="字符串拼接性能对比">
+      <i class="fa fa-chevron-left"></i> 字符串拼接性能对比
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/07/XPS13-intel-CPU%E8%B6%85%E9%A2%91%E5%AF%BC%E8%87%B4%E5%8F%91%E7%83%AD%E4%B8%A5%E9%87%8D/" rel="next" title="XPS13-intel-CPU超频导致发热严重">
+      XPS13-intel-CPU超频导致发热严重 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#shell学习笔记"><span class="nav-number">1.</span> <span class="nav-text"> shell学习笔记</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#sed手册"><span class="nav-number">1.1.</span> <span class="nav-text">sed手册</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#awk"><span class="nav-number">1.2.</span> <span class="nav-text">awk </span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#set"><span class="nav-number">1.3.</span> <span class="nav-text">set --</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#shell-调用其他脚本"><span class="nav-number">1.4.</span> <span class="nav-text">shell 调用其他脚本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#echo和printf命令"><span class="nav-number">1.5.</span> <span class="nav-text">echo和printf命令</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">woodpenker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">woodpenker</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">30k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">27 mins.</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '48c032bda0d82373632b',
+      clientSecret: 'b9b6f59ab94d887da07daea46c0b5e9fadd7c873',
+      repo        : 'woodpenker.github.io',
+      owner       : 'woodpenker',
+      admin       : ['woodpenker'],
+      id          : '8455200ee5ccdc515be37df88cac3693',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
