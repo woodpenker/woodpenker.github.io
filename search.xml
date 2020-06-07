@@ -4,6 +4,7 @@
     <title>XPS13-intel-CPU超频导致发热严重</title>
     <url>/2020/06/07/XPS13-intel-CPU%E8%B6%85%E9%A2%91%E5%AF%BC%E8%87%B4%E5%8F%91%E7%83%AD%E4%B8%A5%E9%87%8D/</url>
     <content><![CDATA[<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>前段时间入手了一台xps13,安装了fedora28后,经常在启动和关机时出项cpu过热的报警信息:</p>
+<a id="more"></a>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[26670.911219] CPU1: Core temperature above threshold, cpu clock throttled (total events &#x3D; 1)</span><br><span class="line">[26670.911221] CPU0: Core temperature above threshold, cpu clock throttled (total events &#x3D; 1)</span><br><span class="line">[26670.911222] CPU2: Package temperature above threshold, cpu clock throttled (total events &#x3D; 1)</span><br><span class="line">[26670.911223] CPU3: Package temperature above threshold, cpu clock throttled (total events &#x3D; 1)</span><br><span class="line">[26670.911224] CPU0: Package temperature above threshold, cpu clock throttled (total events &#x3D; 1)</span><br><span class="line">[26670.911232] CPU1: Package temperature above threshold, cpu clock throttled (total events &#x3D; 1)</span><br></pre></td></tr></table></figure>
 
 <p>主要是由于主板打开了超频选项,内核也支持超频,使得cpu由1.2GHZ超频到4GHZ以上,明显感觉主机发热严重.使用<code>s-tui</code>记录CPU温度都达到100度.真的是<em>烤鸡</em>了…</p>
@@ -203,7 +204,7 @@
 <li><p>对于方法处理,可以进行多次嵌套, 如 <code>a.split(&#39;\n&#39;).strip()</code></p>
 </li>
 <li><p>if…else….可以进行三目运算,类似c语言, <code>a = b if a &gt; 10 else c</code></p>
-</li>
+<a id="more"></a></li>
 <li><p>多值判断用 <code>if 70 &lt; a &lt; 90 :</code> 不用 <code>if a &gt; 70 and a &lt; 90</code> 或者使用<code>if a in (1,2,3):</code>判断多个条件, 判断空值或None 用<code>if a</code>而不是 <code>if len(a)&gt;0 or a != None</code>,判断多个and 或 or条件 可以使用 <code>if all(a&gt;60,b&gt;70):</code></p>
 </li>
 <li><p>for 循环 尽量使用推导式 <code>a= [x for x in b_list]</code>,同时list的下标和数值用 <code>for k,v in enumerate(a)</code>,推导式比较省内存,因为其默认就是使用的生成器的方式进行.</p>
@@ -246,7 +247,7 @@
 <li><p>检测变量是否存在：<code>${varname? ERR:something}</code>若varname变量未定义则报错后面错误信息”ERR:…”</p>
 </li>
 <li><p>bash4.0 新特性: <code>{1..10..2}</code>从1自增到10每次加2</p>
-</li>
+<a id="more"></a>  </li>
 <li><p><code>d{a,b,c}</code>代表da,db,dc</p>
 </li>
 <li><p><code>~+</code>代表PWD值/<code>~-</code>代表LODPWD值</p>
@@ -378,6 +379,7 @@
     <url>/2020/06/07/%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8B%BC%E6%8E%A5/</url>
     <content><![CDATA[<h1 id="字符串拼接"><a href="#字符串拼接" class="headerlink" title="字符串拼接"></a>字符串拼接</h1><p>last update: 5/21/19 10:10 PM</p>
 <p>前两天需要大量做字符串的拼接,生成html文件.对于如何快速生成字符串进行了研究和测试. </p>
+<a id="more"></a>
 <h2 id="python"><a href="#python" class="headerlink" title="python"></a>python</h2><p>在python中最先想到的拼接方式就是<code>c=c+a</code>很直观.另外发现python还提供了很多种字符串的操作:</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">c&#x3D;c+a</span><br><span class="line"></span><br><span class="line">c+&#x3D;a</span><br><span class="line"></span><br><span class="line">&quot;&#123;&#125;&#123;&#125;&quot;.format(c,a)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">c&#x3D;[] c+&#x3D;[a] &quot;&quot;.join(c)</span><br></pre></td></tr></table></figure>
 <p>测试代码:</p>

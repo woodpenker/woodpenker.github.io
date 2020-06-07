@@ -28,7 +28,7 @@
 <meta property="og:description" content="pythonic 技巧 赋值可以采用元组赋值方法: a,b &#x3D; 1, 2 , 函数的返回值也可是多值返回, a, b &#x3D; test(c)这一点与golang很像, 支持多个, 对于数组赋值也可以通过序列解包来进行赋值a,b &#x3D; [1,2]  对于方法处理,可以进行多次嵌套, 如 a.split(&#39;\n&#39;).strip()  if…else….可以进行三目运算,类似c语言, a &#x3D;">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-06-07T04:54:22.097Z">
-<meta property="article:modified_time" content="2020-06-07T05:35:35.399Z">
+<meta property="article:modified_time" content="2020-06-07T06:02:12.843Z">
 <meta property="article:author" content="woodpenker">
 <meta property="article:tag" content="python">
 <meta property="article:tag" content="language">
@@ -231,7 +231,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-06-07 12:54:22 / Modified: 13:35:35" itemprop="dateCreated datePublished" datetime="2020-06-07T12:54:22+08:00">2020-06-07</time>
+              <time title="Created: 2020-06-07 12:54:22 / Modified: 14:02:12" itemprop="dateCreated datePublished" datetime="2020-06-07T12:54:22+08:00">2020-06-07</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -274,7 +274,7 @@
 <li><p>对于方法处理,可以进行多次嵌套, 如 <code>a.split(&#39;\n&#39;).strip()</code></p>
 </li>
 <li><p>if…else….可以进行三目运算,类似c语言, <code>a = b if a &gt; 10 else c</code></p>
-</li>
+<a id="more"></a></li>
 <li><p>多值判断用 <code>if 70 &lt; a &lt; 90 :</code> 不用 <code>if a &gt; 70 and a &lt; 90</code> 或者使用<code>if a in (1,2,3):</code>判断多个条件, 判断空值或None 用<code>if a</code>而不是 <code>if len(a)&gt;0 or a != None</code>,判断多个and 或 or条件 可以使用 <code>if all(a&gt;60,b&gt;70):</code></p>
 </li>
 <li><p>for 循环 尽量使用推导式 <code>a= [x for x in b_list]</code>,同时list的下标和数值用 <code>for k,v in enumerate(a)</code>,推导式比较省内存,因为其默认就是使用的生成器的方式进行.</p>
