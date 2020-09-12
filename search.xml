@@ -765,7 +765,7 @@
   </entry>
   <entry>
     <title>go 语言设计与实现 学习笔记</title>
-    <url>/2610/02/22/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
+    <url>/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
     <content><![CDATA[<h1 id="go-语言设计与实现-学习笔记"><a href="#go-语言设计与实现-学习笔记" class="headerlink" title="go 语言设计与实现 学习笔记"></a>go 语言设计与实现 学习笔记</h1><p><a href="https://draveness.me/golang/" target="_blank" rel="noopener">https://draveness.me/golang/</a></p>
 <h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><p>go的编译过程包括了: 词法与语法分析、类型检查和 AST 转换、通用 SSA 生成和最后的机器代码生成 四个部分.  在类型检查阶段对make进行改写替换成实际底层对应的slice、map、chan创建方法. 中间代码从AST到SSA的过程中进行了几十次迭代优化, 执行50多个过程. </p>
 <h2 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h2><p><strong>如果数组中元素的个数小于或者等于4 个，那么所有的变量会直接在栈上初始化，如果数组元素大于 4 个，变量就会在静态存储区初始化然后拷贝到栈上</strong>，这些转换后的代码才会继续进入中间代码生成和机器码生成两个阶段，最后生成可以执行的二进制文件.  -&gt; 可能的原因是为了优化编译时间, 在静态区创建后就不用再次设置值, 而直接在栈上创建会需要再设置一次初始值.</p>

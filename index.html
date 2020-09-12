@@ -207,7 +207,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2610/02/22/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
+    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -221,7 +221,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2610/02/22/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">go 语言设计与实现 学习笔记</a>
+            <a href="/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">go 语言设计与实现 学习笔记</a>
         </h2>
 
         <div class="post-meta">
@@ -230,16 +230,10 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2610-02-22 04:30:15" itemprop="dateCreated datePublished" datetime="2610-02-22T04:30:15+08:00">2610-02-22</time>
+              <time title="Created: 2020-09-12 21:57:41 / Modified: 22:07:43" itemprop="dateCreated datePublished" datetime="2020-09-12T21:57:41+08:00">2020-09-12</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-12 21:58:03" itemprop="dateModified" datetime="2020-09-12T21:58:03+08:00">2020-09-12</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -275,900 +269,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="go-语言设计与实现-学习笔记"><a href="#go-语言设计与实现-学习笔记" class="headerlink" title="go 语言设计与实现 学习笔记"></a>go 语言设计与实现 学习笔记</h1><p><a href="https://draveness.me/golang/" target="_blank" rel="noopener">https://draveness.me/golang/</a></p>
-<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><p>go的编译过程包括了: 词法与语法分析、类型检查和 AST 转换、通用 SSA 生成和最后的机器代码生成 四个部分.  在类型检查阶段对make进行改写替换成实际底层对应的slice、map、chan创建方法. 中间代码从AST到SSA的过程中进行了几十次迭代优化, 执行50多个过程. </p>
-<h2 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h2><p><strong>如果数组中元素的个数小于或者等于4 个，那么所有的变量会直接在栈上初始化，如果数组元素大于 4 个，变量就会在静态存储区初始化然后拷贝到栈上</strong>，这些转换后的代码才会继续进入中间代码生成和机器码生成两个阶段，最后生成可以执行的二进制文件.  -&gt; 可能的原因是为了优化编译时间, 在静态区创建后就不用再次设置值, 而直接在栈上创建会需要再设置一次初始值.</p>
-<p>无论是在栈上还是静态存储区，数组在内存中其实就是一连串的内存空间，表示数组的方法就是一个指向数组开头的指针、数组中元素的数量以及数组中元素类型占的空间大小，如果我们不知道数组中元素的数量，访问时就可能发生越界，而如果不知道数组中元素类型的大小，就没有办法知道应该一次取出多少字节的数据，如果没有这些信息，我们就无法知道这片连续的内存空间到底存储了什么数据.</p>
-<p>Go 语言对于数组的访问还是有着比较多的检查的，它不仅会在编译期间提前发现一些简单的越界错误并插入用于检测数组上限的函数调用<code>panicIndex</code>，而在运行期间这些插入的函数会负责保证不会发生越界错误。</p>
-<h2 id="切片"><a href="#切片" class="headerlink" title="切片"></a>切片</h2><p>切片内元素的类型是在编译期间确定的，编译器确定了类型之后，会将类型存储在 Extra 字段中帮助程序在运行时动态获取</p>
-<p>编译期间的切片是 Slice 类型的，但是在运行时切片由如下的 SliceHeader 结构体表示，其中 Data 字段是指向数组的指针，Len 表示当前切片的长度，而 Cap 表示当前切片的容量，也就是 Data 数组的大小：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> SliceHeader <span class="keyword">struct</span> &#123;</span><br><span class="line">	Data <span class="keyword">uintptr</span></span><br><span class="line">	Len  <span class="keyword">int</span></span><br><span class="line">	Cap  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>切片可以理解为一个对数组的抽象层. </p>
-<p>Go 语言中的切片有三种初始化的方式：</p>
-<ol>
-<li>通过下标的方式获得数组或者切片的一部分；是最原始也最接近汇编语言的方式. 如 arr[0:3], 其直接创建slice的结构体, 并设置<code>data, len, cap</code>数值.</li>
-<li>使用字面量初始化新的切片；首先创建底层数组并赋值每个值, 其后创建一个指针指向静态存储中的该数组, 最后通过<code>[:]</code>获得切片结构, 可见<code>[:]</code>是创建切片的最底层方法之一.</li>
-<li>使用关键字 make 创建切片, 很多工作都需要运行时的参与, 编译器在类型检查时保证传入的容量 cap 一定大于或者等于 len. 当切片发生逃逸或者非常大时，我们需要 runtime.makeslice 函数在堆上初始化. 如果当前的切片不会发生逃逸并且切片非常小的时候，如<code>make([]int, 3, 4)</code>会被直接转换成如下所示的代码：<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> arr [<span class="number">4</span>]<span class="keyword">int</span></span><br><span class="line">n := arr[:<span class="number">3</span>]</span><br></pre></td></tr></table></figure>
-makeslice会最后调用mallocgc, 其是用于申请内存的函数，这个函数的实现还是比较复杂，如果遇到了比较小的对象会直接初始化在 Go 语言调度器里面的 P 结构中，<em>而大于 32KB 的一些对象会在堆上初始化</em>.</li>
-</ol>
-<p>因为大多数对切片类型的操作并不需要直接操作原 slice 结构体，所以 SliceHeader 的引入能够减少切片初始化时的少量开销，这个改动能够减少 约0.2% 的 Go 语言包大小并且能够减少 92 个 panicindex 的调用，占整个 Go 语言二进制的 3.5%.</p>
-<p>len 和 cap 被 Go 语言的编译器看成是两种特殊的操作，即 OLEN 和 OCAP，它们会在 SSA 生成阶段被 <code>cmd/compile/internal/gc.epxr</code> 函数转换成 OpSliceLen 和 OpSliceCap 操作</p>
-<h4 id="range遍历优化"><a href="#range遍历优化" class="headerlink" title="range遍历优化"></a>range遍历优化</h4><p>使用 range 遍历切片时也会在编译期间转换成形式更简单的代码. 编译器会在编译期间将所有 for/range 循环变成经典的for循环.对于所有的 range 循环，Go 语言都会在编译期将原切片或者数组赋值给一个新的变量 ha，在赋值的过程中就发生了拷贝，所以我们遍历的切片已经不是原始的切片变量了。而遇到这种同时遍历索引和元素的 range 循环时，Go 语言会额外创建一个新的 v2 变量存储切片中的元素，循环中使用的这个变量 v2 会在每一次迭代被重新赋值而覆盖，在赋值时也发生了拷贝. </p>
-<h4 id="go中append操作会根据是否覆盖原变量的情况进行代码优化"><a href="#go中append操作会根据是否覆盖原变量的情况进行代码优化" class="headerlink" title="go中append操作会根据是否覆盖原变量的情况进行代码优化:"></a>go中append操作会根据是否覆盖原变量的情况进行代码优化:</h4><p>不覆盖:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// append(slice, 1, 2, 3)</span></span><br><span class="line">ptr, <span class="built_in">len</span>, <span class="built_in">cap</span> := slice</span><br><span class="line">newlen := <span class="built_in">len</span> + <span class="number">3</span></span><br><span class="line"><span class="keyword">if</span> newlen &gt; <span class="built_in">cap</span> &#123;</span><br><span class="line">    ptr, <span class="built_in">len</span>, <span class="built_in">cap</span> = growslice(slice, newlen)</span><br><span class="line">    newlen = <span class="built_in">len</span> + <span class="number">3</span></span><br><span class="line">&#125;</span><br><span class="line">*(ptr+<span class="built_in">len</span>) = <span class="number">1</span></span><br><span class="line">*(ptr+<span class="built_in">len</span>+<span class="number">1</span>) = <span class="number">2</span></span><br><span class="line">*(ptr+<span class="built_in">len</span>+<span class="number">2</span>) = <span class="number">3</span></span><br><span class="line"><span class="keyword">return</span> makeslice(ptr, newlen, <span class="built_in">cap</span>)</span><br></pre></td></tr></table></figure>
-<p>覆盖:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// slice = append(slice, 1, 2, 3)</span></span><br><span class="line">a := &amp;slice</span><br><span class="line">ptr, <span class="built_in">len</span>, <span class="built_in">cap</span> := slice</span><br><span class="line">newlen := <span class="built_in">len</span> + <span class="number">3</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">uint</span>(newlen) &gt; <span class="keyword">uint</span>(<span class="built_in">cap</span>) &#123;</span><br><span class="line">   newptr, <span class="built_in">len</span>, newcap = growslice(slice, newlen)</span><br><span class="line">   vardef(a)</span><br><span class="line">   *a.<span class="built_in">cap</span> = newcap</span><br><span class="line">   *a.ptr = newptr</span><br><span class="line">&#125;</span><br><span class="line">newlen = <span class="built_in">len</span> + <span class="number">3</span></span><br><span class="line">*a.<span class="built_in">len</span> = newlen</span><br><span class="line">*(ptr+<span class="built_in">len</span>) = <span class="number">1</span></span><br><span class="line">*(ptr+<span class="built_in">len</span>+<span class="number">1</span>) = <span class="number">2</span></span><br><span class="line">*(ptr+<span class="built_in">len</span>+<span class="number">2</span>) = <span class="number">3</span></span><br></pre></td></tr></table></figure>
-<p>主要优化就是对于不覆盖的场景返回一个新的slice结构, 对于覆盖的场景就直接修改原来的slice结构中cap len data的值. 这样就不需要创建一个新的结构体了. </p>
-<p><code>growslice</code> 方法负责在cap不够新的len时进行扩容:</p>
-<ol>
-<li>如果期望容量大于当前容量的两倍就会使用期望容量；</li>
-<li>如果当前切片的长度小于 1024 就会将容量翻倍；</li>
-<li>如果当前切片的长度大于 1024 就会每次增加 25% 的容量，直到新容量大于期望容量</li>
-</ol>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">growslice</span><span class="params">(et *_type, old slice, <span class="built_in">cap</span> <span class="keyword">int</span>)</span> <span class="title">slice</span></span> &#123;</span><br><span class="line">	newcap := old.<span class="built_in">cap</span></span><br><span class="line">	doublecap := newcap + newcap</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">cap</span> &gt; doublecap &#123;</span><br><span class="line">		newcap = <span class="built_in">cap</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> old.<span class="built_in">len</span> &lt; <span class="number">1024</span> &#123;</span><br><span class="line">			newcap = doublecap</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">for</span> <span class="number">0</span> &lt; newcap &amp;&amp; newcap &lt; <span class="built_in">cap</span> &#123;</span><br><span class="line">				newcap += newcap / <span class="number">4</span></span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> newcap &lt;= <span class="number">0</span> &#123;</span><br><span class="line">				newcap = <span class="built_in">cap</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">// 确定了切片的容量之后，就可以计算切片中新数组占用的内存了，计算的方法就是将目标容量和元素大小相乘，计算新容量时可能会发生溢出或者请求的内存超过上限，在这时就会直接 panic</span></span><br><span class="line">	...</span><br><span class="line">	<span class="comment">// 最终会返回一个新的 slice 结构</span></span><br><span class="line">	<span class="keyword">return</span> slice&#123;p, old.<span class="built_in">len</span>, newcap&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>如果切片中元素不是指针类型，那么就会调用 <code>memclrNoHeapPointers</code> 将超出切片当前长度的位置清空并在最后使用 <code>memmove</code> 将原数组内存中的内容拷贝到新申请的内存中. memclrNoHeapPointers 和 memmove 都是用目标机器上的汇编指令实现的.</p>
-<h4 id="copy"><a href="#copy" class="headerlink" title="copy"></a>copy</h4><p>copy(a, b) 的形式对切片进行拷贝时，编译期间的 cmd/compile/internal/gc.copyany 函数也会分两种情况进行处理，如果当前 copy 不是在运行时调用的，copy(a, b) 会被直接转换成下面的代码：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">n := <span class="built_in">len</span>(a)</span><br><span class="line"><span class="keyword">if</span> n &gt; <span class="built_in">len</span>(b) &#123;</span><br><span class="line">    n = <span class="built_in">len</span>(b)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> a.ptr != b.ptr &#123;</span><br><span class="line">    memmove(a.ptr, b.ptr, n*sizeof(elem(a))) </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p> memmove 会负责对内存进行拷贝，在其他情况下，编译器会使用 runtime.slicecopy 函数替换运行期间调用的 copy. </p>
-<p><code>memmove</code> 是将整块内存中的内容拷贝到目标的内存区域, 这也就是为什么copy的dest需要指定和source一样或者更大的cap, 如果dest没有初始化足够的cap, 那么拷贝只会将两者容量中最小的容量的数据进行拷贝, 这就产生了时常忽略的错误. </p>
-<p>哪怕使用 <code>memmove</code>对内存成块进行拷贝，但是这个操作还是会占用非常多的资源，在大切片上执行拷贝操作时一定要注意性能影响。</p>
-<h5 id="注意"><a href="#注意" class="headerlink" title="注意:"></a>注意:</h5><p>如果slice的底层cap容量是够用的, 创建新的slice进行append后再对原slice进行append,会覆盖前一次append的值. 执行如下代码会发现,b的底层数据被覆盖成了4而不是3.</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a := <span class="built_in">make</span>([]<span class="keyword">int</span>, <span class="number">4</span>, <span class="number">8</span>)</span><br><span class="line">b := <span class="built_in">append</span>(a, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>)</span><br><span class="line">a = <span class="built_in">append</span>(a, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>) </span><br><span class="line"><span class="built_in">println</span>(b[<span class="number">4</span>]) <span class="comment">// 4</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="哈希表-map"><a href="#哈希表-map" class="headerlink" title="哈希表 map"></a>哈希表 map</h2><p>哈希函数往往都是不完美的，输出的范围是有限的，所以一定会发生哈希碰撞，这时就需要一些方法来解决哈希碰撞的问题，常见方法的就是开放寻址法和拉链法.</p>
-<p>开放寻址法核心思想是对数组中的元素依次探测和比较以判断目标键值对是否存在于哈希表中，如果我们使用开放寻址法来实现哈希表，那么在支撑哈希表的数据结构就是数组. 当我们向当前哈希表写入新的数据时发生了冲突，就会将键值对写入到下一个不为空的位置.</p>
-<p>当需要查找某个键对应的值时，就会从索引的位置开始对数组进行线性探测，找到目标键值对或者空内存就意味着这一次查询操作的结束。</p>
-<h4 id="开放寻址法"><a href="#开放寻址法" class="headerlink" title="开放寻址法"></a>开放寻址法</h4><p>开放寻址法中对性能影响最大的就是装载因子，它是数组中元素的数量与数组大小的比值，随着装载因子的增加，线性探测的平均用时就会逐渐增加，这会同时影响哈希表的读写性能，当装载率超过 70% 之后，哈希表的性能就会急剧下降，而一旦装载率达到 100%，整个哈希表就会完全失效，这时查找和插入任意元素的时间复杂度都是 O(n) 的，它们可能需要遍历数组中全部的元素，所以在实现哈希表时一定要时刻关注装载因子的变化</p>
-<h4 id="拉链法"><a href="#拉链法" class="headerlink" title="拉链法"></a>拉链法</h4><p>实现拉链法一般会使用数组加上链表, 有一些语言会在拉链法的哈希中引入红黑树以优化性能, 它的实现比较开放地址法稍微复杂一些，但是平均查找的长度也比较短，各个用于存储节点的内存都是动态申请的，可以节省比较多的存储空间. </p>
-<p>哈希函数返回的哈希会帮助我们选择一个桶(链表)，和开放地址法一样，选择桶的方式就是直接对哈希返回的结果取模. 在遍历链表的过程中会遇到以下两种情况：</p>
-<ol>
-<li>找到键相同的键值对 —— 更新键对应的值；</li>
-<li>没有找到键相同的键值对 —— 在链表的末尾追加新键值对</li>
-</ol>
-<p>在一个性能比较好的哈希表中，每一个桶中都应该有 0-1 个元素，有时会有 2-3 个. 其装载因子 := 元素数量 / 桶数量</p>
-<p>与开放地址法一样，拉链法的装载因子越大，哈希的读写性能就越差，在一般情况下使用拉链法的哈希表装载因子都不会超过 1，当哈希表的装载因子较大(常见java 0.75?)时就会触发哈希的扩容，创建更多的桶来存储哈希中的元素，保证性能不会出现严重的下降</p>
-<p>go中使用<code>hmap</code>存储哈希, 其中<code>B</code>字段表示当前哈希表持有的 buckets 数量,<strong>B最大为256</strong>，但是因为哈希表中桶的数量都 2 的倍数，所以该字段会存储对数，也就是 <code>len(buckets) == 2^B</code>; hash0 是哈希的种子，它能为哈希函数的结果引入随机性，这个值在创建哈希表时确定，并在调用哈希函数时作为参数传入.</p>
-<p><strong>B的uint8类型，最大为255。所以最大有2^255个桶，每个桶可装8个kv，还有额外的溢出桶最大容量在4.63x10^77以上.</strong> </p>
-<p>哈希表 <code>hmap</code> 的桶就是 <code>bmap</code>, <strong>每一个 bmap 都能存储 8 个键值</strong>对，当哈希表中存储的数据过多，单个桶无法装满时就会使用 <code>extra.overflow</code> 中桶存储溢出的数据, 这两者分别叫做正常桶和溢出桶.<br>溢出桶能减少扩容的频率. </p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// bmap 结构体其实不止包含 tophash 字段，由于哈希表中可能存储不同类型的键值对并且 Go 语言也不支持泛型，所以键值对占据的内存空间大小只能在编译时进行推导，这些字段在运行时也都是通过计算内存地址的方式直接访问的，所以它的定义中就没有包含这些字段</span></span><br><span class="line"><span class="keyword">type</span> bmap <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="comment">// tophash 存储了键的哈希的高 8 位，通过比较不同键的哈希的高 8 位可以减少访问键值对次数以提高性能</span></span><br><span class="line">	tophash [bucketCnt]<span class="keyword">uint8</span></span><br><span class="line">	<span class="comment">// 以下都是隐藏字段</span></span><br><span class="line">	  keys     [<span class="number">8</span>]keytype</span><br><span class="line">    values   [<span class="number">8</span>]valuetype</span><br><span class="line">    pad      <span class="keyword">uintptr</span></span><br><span class="line">    overflow <span class="keyword">uintptr</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><p>通过<a href="https://github.com/golang/go/blob/f07059d949057f414dd0f8303f93ca727d716c62/src/cmd/compile/internal/gc/sinit.go#L768-L873" target="_blank" rel="noopener">gc.maplit</a>  初始化哈希. </p>
-<p>例如:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hash := <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">int</span>&#123;</span><br><span class="line">	<span class="string">"1"</span>: <span class="number">2</span>,</span><br><span class="line">	<span class="string">"3"</span>: <span class="number">4</span>,</span><br><span class="line">	<span class="string">"5"</span>: <span class="number">6</span>,</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>当哈希表中的元素数量少于或者等于 25 个时，编译器会直接调用 <code>addMapEntries</code> 将字面量初始化的结构体转换成以下的代码，将所有的键值对一次加入到哈希表中：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hash := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">int</span>, <span class="number">3</span>)</span><br><span class="line">hash[<span class="string">"1"</span>] = <span class="number">2</span></span><br><span class="line">hash[<span class="string">"3"</span>] = <span class="number">4</span></span><br><span class="line">hash[<span class="string">"5"</span>] = <span class="number">6</span></span><br></pre></td></tr></table></figure>
-
-<p>一旦<strong>哈希表中元素的数量超过了 25 个，就会在编译期间创建两个数组分别存储键和值的信息</strong>,两个切片 vstatk 和 vstatv 还会被编辑器继续展开，这些键值对会通过一个如下所示的 for 循环加入目标的哈希：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hash := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">int</span>, <span class="number">26</span>)</span><br><span class="line">vstatk := []<span class="keyword">string</span>&#123;<span class="string">"1"</span>, <span class="string">"2"</span>, <span class="string">"3"</span>, ... ， <span class="string">"26"</span>&#125;</span><br><span class="line">vstatv := []<span class="keyword">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, ... , <span class="number">26</span>&#125;</span><br><span class="line"><span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(vstak); i++ &#123;</span><br><span class="line">    hash[vstatk[i]] = vstatv[i]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Go 语言编译器都会在类型检查期间将make转换成对 <a href="https://github.com/golang/go/blob/dcd3b2c173b77d93be1c391e3b5f932e0779fb1f/src/runtime/map.go#L303-L336" target="_blank" rel="noopener">runtime.makemap</a> 的调用</p>
-<p>这个函数的执行过程会分成以下几个部分：</p>
-<ol>
-<li>计算哈希占用的内存是否溢出或者超出能分配的最大值；</li>
-<li>调用 fastrand 获取一个随机的哈希种子；</li>
-<li>根据传入的 hint 计算出需要的最小需要的桶的数量；</li>
-<li>使用 runtime.makeBucketArray 创建用于保存桶的数组；<a href="https://github.com/golang/go/blob/dcd3b2c173b77d93be1c391e3b5f932e0779fb1f/src/runtime/map.go#L344-L387" target="_blank" rel="noopener">runtime.makeBucketArray</a> 函数会根据传入的 B 计算出的需要创建的桶数量在内存中分配一片连续的空间用于存储数据. </li>
-</ol>
-<p><strong>当桶的数量小于 16(2^4) 时，由于数据较少、使用溢出桶的可能性较低，这时就会省略创建溢出桶的过程以减少额外开销；当桶的数量多于 16(2^4) 时，就会额外创建 2^(B−4) 个溢出桶</strong>，根据上述代码，我们能确定在正常情况下，<strong>正常桶和溢出桶在内存中的存储空间是连续的</strong>，只是被 hmap 中的不同字段引用，当溢出桶数量较多时会通过 runtime.newobject 创建新的溢出桶</p>
-<h4 id="访问"><a href="#访问" class="headerlink" title="访问"></a>访问</h4><p>对map的访问会根据是否进行存在判断,执行mapaccess1和mapaccess2(判断key存在: v, ok := hash[key]形式)<br><a href="https://github.com/golang/go/blob/36f30ba289e31df033d100b2adb4eaf557f05a34/src/runtime/map.go#L394-L450" target="_blank" rel="noopener">runtime.mapaccess1</a> 函数会先通过哈希表设置的哈希函数、种子获取当前键对应的哈希，再通过 bucketMask 和 add 函数拿到该键值对所在的桶序号和哈希最上面的 8 位数字</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapaccess1</span><span class="params">(t *maptype, h *hmap, key unsafe.Pointer)</span> <span class="title">unsafe</span>.<span class="title">Pointer</span></span> &#123;</span><br><span class="line">	alg := t.key.alg</span><br><span class="line">	hash := alg.hash(key, <span class="keyword">uintptr</span>(h.hash0))</span><br><span class="line">	m := bucketMask(h.B)</span><br><span class="line">	b := (*bmap)(add(h.buckets, (hash&amp;m)*<span class="keyword">uintptr</span>(t.bucketsize)))</span><br><span class="line">	top := tophash(hash)</span><br><span class="line">bucketloop:</span><br><span class="line">	<span class="keyword">for</span> ; b != <span class="literal">nil</span>; b = b.overflow(t) &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="keyword">uintptr</span>(<span class="number">0</span>); i &lt; bucketCnt; i++ &#123;</span><br><span class="line">			<span class="keyword">if</span> b.tophash[i] != top &#123;</span><br><span class="line">				<span class="keyword">if</span> b.tophash[i] == emptyRest &#123;</span><br><span class="line">					<span class="keyword">break</span> bucketloop</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			k := add(unsafe.Pointer(b), dataOffset+i*<span class="keyword">uintptr</span>(t.keysize))</span><br><span class="line">			<span class="keyword">if</span> alg.equal(key, k) &#123;</span><br><span class="line">				v := add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="keyword">uintptr</span>(t.keysize)+i*<span class="keyword">uintptr</span>(t.valuesize))</span><br><span class="line">				<span class="keyword">return</span> v</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> unsafe.Pointer(&amp;zeroVal[<span class="number">0</span>])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在 bucketloop 循环中，哈希会依次遍历正常桶和溢出桶中的数据，它会比较这 8 位数字和桶中存储的 tophash，每一个桶都存储键对应的 tophash，每一次读写操作都会与桶中所有的 tophash 进行比较，<strong>用于选择桶序号的是哈希的最低几位，而用于加速访问的是哈希的高 8 位，这种设计能够减少同一个桶中有大量相等 tophash 的概率(相邻的数据哈希的高位可能很接近或相等, 通过低位选桶可以避免其被分到同一个桶的概率, 这样在同一个桶中使用高8位进行访问加速就很少出现top==tophash[i]的可能, 这样就减少了去取得存储的数据与key进行比较的次数, 因为key可以很长很大, 直接进行比较会很消耗性能, 通过高8位的比较可以加速比较速度)</strong>。当发现桶中的 tophash 与传入键的 tophash 匹配之后，我们会通过指针和偏移量获取哈希中存储的键 keys[0] 并与 key 比较，如果两者相同就会获取目标值的指针 values[0] 并返回.  runtime.mapaccess2 只是在 runtime.mapaccess1 的基础上多返回了一个标识键值对是否存在的布尔值.</p>
-<p><strong>与数组一样，哈希表可能会在装载因子过高或者溢出桶过多时进行扩容，哈希表的扩容并不是一个原子的过程. 这时并发读写就可能产生问题. 需要进行临界区访问控制.</strong> </p>
-<h4 id="写入"><a href="#写入" class="headerlink" title="写入"></a>写入</h4><p>依次遍历正常桶和溢出桶中存储的数据，依次执行:判断 tophash 是否相等、key 是否相等的过程，遍历结束后会从循环中跳出.</p>
-<p>如果当前桶已经满了，哈希会调用 newoverflow 函数创建新桶或者使用 hmap 预先在 noverflow(溢出桶) 中创建好的桶来保存数据，新创建的桶不仅会被追加到已有桶的末尾，还会增加哈希表的 noverflow 计数器.</p>
-<p>如果当前键值对在哈希中不存在，哈希为新键值对规划存储的内存地址，通过 typedmemmove 将键移动到对应的内存空间中并返回键对应值的地址 val，如果当前键值对在哈希中存在，那么就会直接返回目标区域的内存地址。哈希并不会在 mapassign 这个运行时函数中将值拷贝到桶中，该函数只会返回内存地址，真正的赋值操作是在编译期间插入的：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">00018</span> (+<span class="number">5</span>) CALL runtime.mapassign_fast64(SB)</span><br><span class="line"><span class="number">00020</span> (<span class="number">5</span>) MOVQ <span class="number">24</span>(SP), DI               ;; DI = &amp;value</span><br><span class="line"><span class="number">00026</span> (<span class="number">5</span>) LEAQ <span class="keyword">go</span>.<span class="keyword">string</span>.<span class="string">"88"</span>(SB), AX   ;; AX = &amp;<span class="string">"88"</span></span><br><span class="line"><span class="number">00027</span> (<span class="number">5</span>) MOVQ AX, (DI)                 ;; *DI = AX</span><br></pre></td></tr></table></figure>
-<p>runtime.mapassign_fast64 与 runtime.mapassign 函数的实现差不多，我们需要关注的是后面的三行代码，24(SP) 就是该函数返回的值地址，我们通过 LEAQ 指令将字符串的地址存储到寄存器 AX 中，MOVQ 指令将字符串 “88” 存储到了目标地址上完成了这次哈希的写入</p>
-<h4 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a>扩容</h4><p><a href="https://github.com/golang/go/blob/36f30ba289e31df033d100b2adb4eaf557f05a34/src/runtime/map.go#L571-L683" target="_blank" rel="noopener">runtime.mapassign</a> 函数会在以下两种情况发生时触发哈希的扩容：</p>
-<ol>
-<li><strong>装载因子已经超过 6.5；</strong> 进行翻倍扩容. </li>
-<li><strong>哈希使用了太多溢出桶；</strong> 进行等量扩容. 一旦哈希中出现了过多的溢出桶，它就会创建新桶保存数据，垃圾回收会清理老的溢出桶并释放内存. 产生场景: <em>当我们持续向哈希中插入数据并将它们全部删除时，如果哈希表中的数据量没有超过阈值，就会不断积累溢出桶造成缓慢的内存泄漏</em></li>
-</ol>
-<p>扩容不是一个原子的过程，所以 runtime.mapassign 函数还需要判断当前哈希是否已经处于扩容状态，避免二次扩容造成混乱.</p>
-<p>扩容会使用<a href="https://github.com/golang/go/blob/36f30ba289e31df033d100b2adb4eaf557f05a34/src/runtime/map.go#L1128-L1240" target="_blank" rel="noopener">runtime.evacuate </a> 将一个旧桶中的数据分流到两个新桶. 等量扩容只会有一个. </p>
-<p>当哈希表正在处于扩容状态时，每次向哈希表写入值时都会触发 runtime.growWork 对哈希表的内容进行增量拷贝</p>
-<p>总结: <strong>哈希在存储元素过多时会触发扩容操作，每次都会将桶的数量翻倍，整个扩容过程并不是原子的，而是通过 runtime.growWork 增量触发的，在扩容期间访问哈希表时会使用旧桶，向哈希表写入数据时会触发旧桶元素的分流；除了这种正常的扩容之外，为了解决大量写入、删除造成的内存泄漏问题，哈希引入了 sameSizeGrow 这一机制，在出现较多溢出桶时会对哈希进行『内存整理』减少对空间的占用</strong></p>
-<h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4><p>在编译期间，delete 关键字会被转换成操作为 ODELETE 的节点，而 ODELETE 会被 cmd/compile/internal/gc.walkexpr 转换成 mapdelete 函数簇中的一个，包括 mapdelete、mapdelete_faststr、mapdelete_fast32 和 mapdelete_fast64</p>
-<p>哈希表的删除逻辑与写入逻辑非常相似，只是触发哈希的删除需要使用关键字，如果在删除期间遇到了哈希表的扩容，就会对即将操作的桶进行分流，分流结束之后会找到桶中的目标元素完成键值对的删除工作</p>
-<p>mapextra中overflow和oldoverflow, 是方便 gc 的，若 key 和 value 都不是指针，则 gc 不需要遍历 buckets，但这会导致 overflow 被回收，为了避免这种情况，在外层保存了 overflow. bucket中的overflow是 uintptr类型，不会被gc标记，在清扫时就被当成白色对象回收了</p>
-<h4 id="函数传参值传递对于slice、map、chan的解释"><a href="#函数传参值传递对于slice、map、chan的解释" class="headerlink" title="函数传参值传递对于slice、map、chan的解释"></a>函数传参值传递对于slice、map、chan的解释</h4><p>map、channel这两种类型的值其实是指向runtime.hmap与runtime.hchan的指针。</p>
-<p>而slice类型就是runtime.sliceHeader类型。</p>
-<p>所以传递slice，因为值传递，所以拷贝了另一个runtime.sliceHeader作为形参；若函数内对slice做了修改需要返回；</p>
-<p>而传递map，仍然是值传递，但map的值就是指向runtime.hmap的地址，所以函数内做了修改不需要返回就能生效.</p>
-<h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><p>Go 语言中的字符串其实是一个只读的字节数组, 在运行时我们其实还是可以将这段内存拷贝到堆或者栈上，将变量的类型转换成 []byte 之后就可以进行</p>
-<p>每一个字符串在运行时都会使用如下的 StringHeader 结构体表示，在运行时包的内部其实有一个私有的结构 stringHeader，它有着完全相同的结构只是用于存储数据的 Data 字段使用了 unsafe.Pointer 类型. 其结构和silce很像, 缺少了cap, 因为是不可变的.</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> StringHeader <span class="keyword">struct</span> &#123;</span><br><span class="line">	Data <span class="keyword">uintptr</span></span><br><span class="line">	Len  <span class="keyword">int</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在 Go 语言中，有两种字面量方式可以声明一个字符串，一种是使用双引号，另一种是使用反引号</p>
-<p>go的+号拼接字符串时: 如果需要拼接的字符串小于或者等于 5 个，那么就会直接调用 concatstring{2,3,4,5} 等一系列函数，如果超过 5 个就会直接选择 runtime.concatstrings 传入一个数组切片.参见<a href="https://github.com/golang/go/blob/bf4990522263503a1219372cd8f1ee9422b51324/src/cmd/compile/internal/gc/walk.go#L2528-L2586" target="_blank" rel="noopener">cmd/compile/internal/gc.addstr </a> 最终调用<a href="https://github.com/golang/go/blob/8174f7fb2b64c221f7f80c9f7fd4d7eb317ac8bb/src/runtime/string.go#L23-L55" target="_blank" rel="noopener">concatstrings</a> 对传入的切片参数进行遍历，先过滤空字符串并计算拼接后字符串的长度, 如果非空字符串的数量为 1 并且当前的字符串不在栈上就可以直接返回该字符串，不需要进行额外的任何操作。在正常情况下，运行时会调用 copy 将输入的多个字符串拷贝到目标字符串所在的内存空间中，新的字符串是一片新的内存空间，与原来的字符串也没有任何关联，一旦需要拼接的字符串非常大，拷贝带来的性能损失就是无法忽略的</p>
-<h4 id="byte与string互转"><a href="#byte与string互转" class="headerlink" title="[]byte与string互转"></a>[]byte与string互转</h4><p>[]byte转string, 会根据传入的缓冲区大小决定是否需要为新的字符串分配一片内存空间，<a href="https://github.com/golang/go/blob/8174f7fb2b64c221f7f80c9f7fd4d7eb317ac8bb/src/runtime/string.go#L229-L231" target="_blank" rel="noopener">runtime.stringStructOf</a> 会将传入的字符串指针转换成 stringStruct 结构体指针，然后设置结构体持有的字符串指针 str 和长度 len，最后通过 memmove 将原 []byte 中的字节全部复制到新的内存空间中。</p>
-<p>string转[]byte时, 会使用传入的缓冲区写入,没有传入则会创建一个缓冲区. 之后调用copy将数据拷贝进新的[]byte中. 所以<strong>string与[]byte的互相转化是会因为数据长度的增加而增加性能开销的.</strong>  </p>
-<h2 id="函数调用"><a href="#函数调用" class="headerlink" title="函数调用"></a>函数调用</h2><h4 id="C与GO语言参数和返回值"><a href="#C与GO语言参数和返回值" class="headerlink" title="C与GO语言参数和返回值"></a>C与GO语言参数和返回值</h4><p>当我们在 x86_64 的机器上使用 C 语言中调用函数时，参数都是通过寄存器和栈传递的，其中：</p>
-<ol>
-<li>六个以及六个以下的参数会按照顺序分别使用 edi、esi、edx、ecx、r8d 和 r9d 六个寄存器传递；</li>
-<li>六个以上的参数会使用栈传递，函数的参数会以从右到左的顺序依次存入栈中；</li>
-</ol>
-<p>而函数的返回值是通过 eax 寄存器进行传递的，由于只使用一个寄存器存储返回值，所以 C 语言的函数不能同时返回多个值。</p>
-<p>go编译汇编: <code>go tool compile -S -N -l main.go</code> 如果编译时不使用 -N -l 参数，编译器会对汇编代码进行优化</p>
-<p>Go 语言使用栈传递参数和接收返回值.</p>
-<p><strong>C 语言同时使用寄存器和栈传递参数，使用 eax 寄存器传递返回值；而 Go 语言使用栈传递参数和返回值。</strong><br>对比一下这两种设计的优点和缺点：</p>
-<ol>
-<li>C 语言的方式能够极大地减少函数调用的额外开销，但是也增加了实现的复杂度；</li>
-</ol>
-<ul>
-<li>CPU 访问栈的开销比访问寄存器高几十倍3；</li>
-<li>需要单独处理函数参数过多的情况；</li>
-</ul>
-<ol start="2">
-<li>Go 语言的方式能够降低实现的复杂度并支持多返回值，但是牺牲了函数调用的性能；</li>
-</ol>
-<ul>
-<li>不需要考虑超过寄存器数量的参数应该如何传递；</li>
-<li>不需要考虑不同架构上的寄存器差异；</li>
-<li>函数入参和出参的内存空间需要在栈上进行分配；</li>
-</ul>
-<p>Go 语言使用栈作为参数和返回值传递的方法是综合考虑后的设计，选择这种设计意味着编译器会更加简单、更容易维护。</p>
-<p><strong>Go 语言参数传递选择了传值的方式，无论是传递基本类型、结构体还是指针，都会对传递的参数进行拷贝</strong></p>
-<ul>
-<li>传递结构体时：会对结构体中的全部内容进行拷贝；</li>
-<li>传递结构体指针时：会对结构体指针进行拷贝；</li>
-</ul>
-<h2 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h2><p>Go 语言中有两种略微不同的接口，一种是带有一组方法的接口(用iface表示)，另一种是不带任何方法的 interface{}(用eface结构表示).</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> eface <span class="keyword">struct</span> &#123; <span class="comment">// 16 bytes</span></span><br><span class="line">	_type *_type</span><br><span class="line">	data  unsafe.Pointer</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> iface <span class="keyword">struct</span> &#123; <span class="comment">// 16 bytes</span></span><br><span class="line">	tab  *itab</span><br><span class="line">	data unsafe.Pointer</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>_type 是 Go 语言类型的运行时表示。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> _type <span class="keyword">struct</span> &#123;</span><br><span class="line">	size       <span class="keyword">uintptr</span> <span class="comment">//size 字段存储了类型占用的内存空间，为内存空间的分配提供信息；</span></span><br><span class="line">	ptrdata    <span class="keyword">uintptr</span></span><br><span class="line">	hash       <span class="keyword">uint32</span> <span class="comment">// hash 字段能够帮助我们快速确定类型是否相等；</span></span><br><span class="line">	tflag      tflag</span><br><span class="line">	align      <span class="keyword">uint8</span></span><br><span class="line">	fieldAlign <span class="keyword">uint8</span></span><br><span class="line">	kind       <span class="keyword">uint8</span></span><br><span class="line">	equal      <span class="function"><span class="keyword">func</span><span class="params">(unsafe.Pointer, unsafe.Pointer)</span> <span class="title">bool</span> // <span class="title">equal</span> 字段用于判断当前类型的多个对象是否相等，该字段是为了减少 <span class="title">Go</span> 语言二进制包大小从 <span class="title">typeAlg</span> 结构体中迁移过来的</span></span><br><span class="line">	gcdata     *<span class="keyword">byte</span></span><br><span class="line">	str        nameOff</span><br><span class="line">	ptrToThis  typeOff</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>itab 结构体是接口类型的核心组成部分，每一个 itab 都占 32 字节的空间，我们可以将其看成接口类型和具体类型的组合，它们分别用 inter 和 _type 两个字段表示</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> itab <span class="keyword">struct</span> &#123; <span class="comment">// 32 bytes</span></span><br><span class="line">	inter *interfacetype</span><br><span class="line">	_type *_type </span><br><span class="line">	hash  <span class="keyword">uint32</span> <span class="comment">// hash 是对 _type.hash 的拷贝，当我们想将 interface 类型转换成具体类型时，可以使用该字段快速判断目标类型和具体类型 _type 是否一致；</span></span><br><span class="line">	_     [<span class="number">4</span>]<span class="keyword">byte</span></span><br><span class="line">	fun   [<span class="number">1</span>]<span class="keyword">uintptr</span> <span class="comment">// fun 是一个动态大小的数组，它是一个用于动态派发的虚函数表，存储了一组函数指针。虽然该变量被声明成大小固定的数组，但是在使用时会通过原始指针获取其中的数据，所以 fun 数组中保存的元素数量是不确定的；</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>//go:noinline</code>可以用于禁止内联编译</p>
-<p>go的四种接口和方法对象组合中<code>只有使用指针实现接口，使用结构体初始化变量</code>无法通过编译.</p>
-<p>Go 语言的接口类型不是任意类型. </p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> TestStruct <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NilOrNot</span><span class="params">(v <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> v == <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> s *TestStruct</span><br><span class="line">	fmt.Println(s == <span class="literal">nil</span>)      <span class="comment">// #=&gt; true</span></span><br><span class="line">	fmt.Println(NilOrNot(s))   <span class="comment">// #=&gt; false</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 调用 NilOrNot 函数时发生了隐式的类型转换，除了向方法传入参数之外，变量的赋值也会触发隐式类型转换。在类型转换时，*TestStruct 类型会转换成 interface&#123;&#125; 类型，转换后的变量不仅包含转换前的变量，还包含变量的类型信息 TestStruct，所以转换后的变量与 nil 不相等</span></span><br></pre></td></tr></table></figure>
-
-<p><em>go在进行类型断言的时候通过hash值比较进行类型判断</em>.</p>
-<p>动态派发（Dynamic dispatch）是在运行期间选择具体多态操作（方法或者函数）执行的过程，它是一种在面向对象语言中常见的特性. 如果编译期间不能确认接口的类型，Go 语言会在运行期间决定具体调用该方法的哪个实现.</p>
-<p>在关闭编译器优化的情况下，动态派发生成的指令会带来 ~18% 左右的额外性能开销。开启编译器优化后，动态派发的额外开销会降低至 约5%. 与使用接口带来的好处相比，动态派发的额外开销往往可以忽略.</p>
-<p>使用结构体来实现接口带来的开销会大于使用指针实现，而动态派发在结构体上的表现非常差，这也提醒我们应当尽量避免使用结构体类型实现接口. 动态派发的过程只是放大了参数拷贝带来的影响</p>
-<h2 id="反射"><a href="#反射" class="headerlink" title="反射"></a>反射</h2><p>reflect.TypeOf 能获取类型信息，reflect.ValueOf 能获取数据的运行时表示, 类型 Type 是反射包定义的一个接口, MethodByName 可以获取当前类型对应方法的引用、Implements 可以判断当前类型是否实现了某个接口, 反射包中 Value 被声明成了结构体</p>
-<p>Go 语言反射的三大法则3，其中包括：</p>
-<ol>
-<li>从 interface{} 变量可以反射出反射对象； interface{} -&gt; 反射对象</li>
-<li>从反射对象可以获取 interface} 变量； 反射对象 -&gt; interface{} , 想换成原始类型还得显式转换.</li>
-<li>要修改反射对象，其值必须可设置；</li>
-</ol>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	i := <span class="number">1</span></span><br><span class="line">	v := reflect.ValueOf(i)</span><br><span class="line">	v.SetInt(<span class="number">10</span>) <span class="comment">// 此处panic</span></span><br><span class="line">	fmt.Println(i)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// panic: reflect: reflect.flag.mustBeAssignable using unaddressable value</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	i := <span class="number">1</span></span><br><span class="line">	v := reflect.ValueOf(&amp;i)</span><br><span class="line">	v.Elem().SetInt(<span class="number">10</span>) <span class="comment">// 想要修改反射对象的值就得先获取指针.</span></span><br><span class="line">	fmt.Println(i)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 10</span></span><br></pre></td></tr></table></figure>
-<p>go中const变量是无法获取到地址的. 就无法通过以上反射修改其值.</p>
-<p>reflect.TypeOf 函数的实现原理其实并不复杂，它只是将一个 interface{} 变量转换成了内部的 emptyInterface 表示，然后从中获取相应的类型信息.</p>
-<p>当我们想要将一个变量转换成反射对象时，Go 语言会在编译期间完成类型转换的工作，将变量的类型和值转换成了 interface{} 并等待运行期间使用 reflect 包获取接口中存储的信息。</p>
-<p>如果接口中不包含任何方法，就意味着这是一个空的接口，任意类型都自动实现该接口. </p>
-<p>由于方法都是按照字母序存储的，reflect.implements 会维护两个用于遍历接口和类型方法的索引 i 和 j 判断类型是否实现了接口，因为最多只会进行 n 次比较（类型的方法数量），所以整个过程的时间复杂度是 O(n).</p>
-<p>当我们想要在 Go 语言中清空一个切片或者哈希表时，我们一般都会使用以下的方法将切片中的元素置零，但是依次去遍历切片和哈希表看起来是非常耗费性能的事, 实际上编译器会直接使用<a href="https://github.com/golang/go/blob/05c02444eb2d8b8d3ecd949c4308d8e2323ae087/src/runtime/memclr_386.s#L12-L16" target="_blank" rel="noopener">runtime.memclrNoHeapPointers</a> 清空切片中的数据,生成的代码会经过编译器优化.</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	arr := []<span class="keyword">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="keyword">range</span> arr &#123;</span><br><span class="line">		arr[i] = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 优化后: 因为是连续空间, 所以直接清空一片空间.</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(a) != <span class="number">0</span> &#123;</span><br><span class="line">    	hp = &amp;a[<span class="number">0</span>]</span><br><span class="line">    	hn = <span class="built_in">len</span>(a)*sizeof(elem(a))</span><br><span class="line">    	memclrNoHeapPointers(hp, hn)</span><br><span class="line">    	i = <span class="built_in">len</span>(a) - <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="for-和-range"><a href="#for-和-range" class="headerlink" title="for 和 range"></a>for 和 range</h2><p>循环同时使用 for 和 range 两个关键字，编译器会在编译期间将所有 for/range 循环变成的经典循环.</p>
-<p>遍历哈希表时会使用 runtime.mapiterinit 函数初始化遍历开始的元素.Go 团队在设计哈希表的遍历时就不想让使用者依赖固定的遍历顺序，所以<strong>引入了随机数保证遍历的随机性</strong>, Go 团队在设计哈希表的遍历时就不想让使用者依赖固定的遍历顺序，所以引入了随机数保证遍历的随机性.</p>
-<p>从桶中找到下一个遍历的元素时在大多数情况下都会直接操作内存获取目标键值的内存地址，不过如果哈希表处于扩容期间就会调用 <a href="https://github.com/golang/go/blob/36f30ba289e31df033d100b2adb4eaf557f05a34/src/runtime/map.go#L511-L552" target="_blank" rel="noopener">runtime.mapaccessK</a> 函数获取键值对. 遍历完正常桶后会依次遍历溢出桶.</p>
-<p>字符串遍历时会将其转为rune类型. </p>
-<p>形如 for v := range ch {} 的语句最终会被转换成如下的格式:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ha := a</span><br><span class="line">hv1, hb := &lt;-ha</span><br><span class="line"><span class="keyword">for</span> ; hb != <span class="literal">false</span>; hv1, hb = &lt;-ha &#123;</span><br><span class="line">    v1 := hv1</span><br><span class="line">    hv1 = <span class="literal">nil</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>该循环会使用 &lt;-ch 从管道中取出等待处理的值，这个操作会调用 runtime.chanrecv2 并阻塞当前的协程，当 runtime.chanrecv2 返回时<em>会根据布尔值 hb 判断当前的值是否存在，如果不存在就意味着当前的管道已经被关闭了</em>，如果存在就会为 v1 赋值并清除 hv1 变量中的数据，然后会重新陷入阻塞等待新数据</p>
-<h2 id="Select"><a href="#Select" class="headerlink" title="Select"></a>Select</h2><p>在多个文件或者 Channel 发生状态改变之前，select 会一直阻塞当前线程或者 Goroutine.</p>
-<ol>
-<li>select 能在 Channel 上进行非阻塞的收发操作；如果存在default,则会在不存在可以收发的channel后, 执行default,default可以不阻塞goroutine. 当存在可以收发的channel时会处理该channel的case.</li>
-<li>select 在遇到多个 Channel 同时响应时会<em>随机挑选</em> case 执行；</li>
-</ol>
-<p>select 在 Go 语言的源代码中不存在对应的结构体，但是 select 控制结构中的 case 却使用 <a href="https://github.com/golang/go/blob/d1969015b4ac29be4f518b94817d3f525380639d/src/runtime/select.go#L28-L34" target="_blank" rel="noopener">runtime.scase</a> 结构体来表示</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> scase <span class="keyword">struct</span> &#123;</span><br><span class="line">	c           *hchan  <span class="comment">// 存储 case 中使用的 Channel</span></span><br><span class="line">	elem        unsafe.Pointer  <span class="comment">// 接收或者发送数据的变量地址</span></span><br><span class="line">	kind        <span class="keyword">uint16</span> <span class="comment">// 表示 runtime.scase 的种类, 总共4种</span></span><br><span class="line">	pc          <span class="keyword">uintptr</span></span><br><span class="line">	releasetime <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// runtime.scase的种类: </span></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	caseNil = <span class="literal">iota</span></span><br><span class="line">	caseRecv</span><br><span class="line">	caseSend</span><br><span class="line">	caseDefault</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<p>select 语句在编译期间会被转换成 OSELECT 节点。每一个 OSELECT 节点都会持有一组 OCASE 节点，如果 OCASE 的执行条件是空，那就意味着这是一个 default 节点</p>
-<p>对于select的4种不同情况的编译器处理与优化: </p>
-<ol>
-<li>空的 select 语句会直接阻塞当前的 Goroutine，导致 Goroutine 进入无法被唤醒的永久休眠状态. 直接将类似 select {} 的空语句转换成调用 runtime.block 函数</li>
-<li>如果当前的 select 条件只包含一个 case，那么就会将 select 改写成 if 条件语句<br>改写成类似<code>v, ok := &lt;-ch // case ch &lt;- v</code> 这样. 这会判断ch是否关闭, 不关闭尝试读取数据. </li>
-<li>当 select 中仅包含两个 case，并且其中一个是 default 时，Go 语言的编译器就会认为这是一次非阻塞的收发操作. 当 case 中表达式的类型是 OSEND 时，编译器会使用 if/else 语句和 runtime.selectnbsend 函数改写代码,它提供了向 Channel 非阻塞地发送数据的能力. 同样接收也会改写成if/else语句. </li>
-<li>其他情况的常规流程下, 先将所有的 case 转换成包含 Channel 以及类型等信息的 runtime.scase 结构体, 再调用运行时函数 runtime.selectgo 从多个准备就绪的 Channel 中选择一个可执行的 runtime.scase 结构体, 最后通过 for 循环生成一组 if 语句，在语句中判断自己是不是被选中的 case. </li>
-</ol>
-<p>其中由selectgo函数负责选择待执行的case. <a href="https://github.com/golang/go/blob/d1969015b4ac29be4f518b94817d3f525380639d/src/runtime/select.go#L118-L497" target="_blank" rel="noopener">runtime.selectgo</a> 函数首先会进行执行必要的初始化操作并决定处理 case 的两个顺序 — 轮询顺序 pollOrder(加入随机性) 和加锁顺序 lockOrder(按照 Channel 的地址排序后确定加锁顺序). 之后它会分三个阶段查找或者等待某个 Channel 准备就绪：</p>
-<ol>
-<li>查找是否已经存在准备就绪的 Channel，即可以执行收发操作；</li>
-<li>将当前 Goroutine 加入 Channel 对应的收/发队列上并等待其他 Goroutine 的唤醒；</li>
-<li>当前 Goroutine 被唤醒之后找到满足条件的 Channel 并进行处理；</li>
-</ol>
-<p>其会根据不同情况通过 goto 跳转到函数内部的不同标签执行相应的逻辑, 包括:</p>
-<ul>
-<li>bufrecv：可以从缓冲区读取数据；</li>
-<li>bufsend：可以向缓冲区写入数据；</li>
-<li>recv：可以从休眠的发送方获取数据；</li>
-<li>send：可以向休眠的接收方发送数据；</li>
-<li>rclose：可以从关闭的 Channel 读取 EOF；</li>
-<li>sclose：向关闭的 Channel 发送数据；</li>
-<li>retc：结束调用并返回；</li>
-</ul>
-<p><strong>随机的轮询顺序可以避免 Channel 的饥饿问题，保证公平性；而根据 Channel 的地址顺序(字母顺序排序)确定加锁顺序能够避免死锁的发生。</strong></p>
-<h4 id="根据-Channel-的地址顺序确定加锁顺序如何做到避免死锁的"><a href="#根据-Channel-的地址顺序确定加锁顺序如何做到避免死锁的" class="headerlink" title="根据 Channel 的地址顺序确定加锁顺序如何做到避免死锁的?"></a>根据 Channel 的地址顺序确定加锁顺序如何做到避免死锁的?</h4><p>lockOrder 的主要作用是避免死锁，如果两个 Goroutine 都需要锁定 ChannelA 和 ChannelB 才能执行任务，当两者尝试去依照不同的顺序进行锁定时，就可能发生死锁，以下是同时发生的：</p>
-<p>Goroutine1 先锁定 A，这时发现 B 被锁定了，它是会有 A 的锁，等待 B 的释放<br>Goroutine2 先锁定 B，这时发现 A 被锁定了，它会持有 B 的锁，等待 A 的释放<br>如果锁定的顺序相同，这种情况就不会出现了，Goroutine1 和 2 都按照字母序来锁定 Channel，先获得 A 的 Goroutine 就可以先执行</p>
-<h4 id="selectgo的三个阶段工作"><a href="#selectgo的三个阶段工作" class="headerlink" title="selectgo的三个阶段工作"></a>selectgo的三个阶段工作</h4><ol>
-<li>查找已经准备就绪的 Channel。<br>其会循环会遍历所有的 case 并找到需要被唤起的 runtime.sudog 结构，在这个阶段，我们会根据 case 的四种类型分别处理：</li>
-</ol>
-<ul>
-<li>caseNil：当前 case 不包含 Channel；<br>  这种 case 会被跳过；</li>
-<li>caseRecv：当前 case 会从 Channel 中接收数据；<ul>
-<li>如果当前 Channel 的 sendq 上有等待的 Goroutine，就会跳到 recv 标签并从缓冲区读取数据,同时将等待的 Goroutine 中的数据放入到缓冲区中相同的位置；</li>
-<li>如果当前 Channel 的缓冲区不为空，就会跳到 bufrecv 标签处从缓冲区获取数据；</li>
-<li>如果当前 Channel 已经被关闭，就会跳到 rclose 做一些清除的收尾工作；</li>
-</ul>
-</li>
-<li>caseSend：当前 case 会向 Channel 发送数据；<ul>
-<li>如果当前 Channel 已经被关，闭就会直接跳到 sclose 标签，触发 panic 尝试中止程序；</li>
-<li>如果当前 Channel 的 recvq 上有等待的 Goroutine，就会跳到 send 标签向 Channel 发送数据；</li>
-<li>如果当前 Channel 的缓冲区存在空闲位置，就会将待发送的数据存入缓冲区；</li>
-</ul>
-</li>
-<li>caseDefault：当前 case 为 default 语句；<br>  表示前面的所有 case 都没有被执行，这里会解锁所有 Channel 并返回，意味着当前 select 结构中的收发都是非阻塞的；</li>
-</ul>
-<ol start="2">
-<li><p>如果不能立刻找到活跃的 Channel 就会进入循环的下一阶段，按照需要将当前的 Goroutine 加入到 Channel 的 sendq 或者 recvq 队列中. 除了将当前 Goroutine 对应的 runtime.sudog 结构体加入队列之外，这些 runtime.sudog 结构体都会被串成链表附着在 Goroutine 上。在入队之后会调用 runtime.gopark 函数挂起当前 Goroutine 等待调度器的唤醒。</p>
-</li>
-<li><p>等到 select 中的一些 Channel 准备就绪之后，当前 Goroutine 就会被调度器唤醒。这时会继续执行 runtime.selectgo 函数的第三阶段，从 runtime.sudog 结构体中获取数据. 会先获取当前 Goroutine 接收到的参数 sudog 结构，我们会依次对比所有 case 对应的 sudog 结构找到被唤醒的 case(链表遍历)，获取该 case 对应的索引并返回.</p>
-</li>
-</ol>
-<p>由于当前的 select 结构找到了一个 case 执行，那么剩下 case 中没有被用到的 sudog 就会被忽略并且释放掉。为了不影响 Channel 的正常使用，我们还是需要将这些废弃的 sudog 从 Channel 中出队。</p>
-<p>当我们在循环中发现缓冲区中有元素或者缓冲区未满时就会通过 goto 关键字跳转到 bufrecv 和 bufsend 两个代码段执行channel的数据收发, 这会调用 Channel 运行时函数 runtime.send 和 runtime.recv，这两个函数会直接与处于休眠状态的 Goroutine 打交道. 有两个特殊情况:<br>    1. 从一个关闭 Channel 中接收数据会直接清除 Channel 中的相关内容；<br>    2. 向一个关闭的 Channel 发送数据就会直接 panic 造成程序崩溃：</p>
-<h2 id="defer"><a href="#defer" class="headerlink" title="defer"></a>defer</h2><p>样例代码:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">createPost</span><span class="params">(db *gorm.DB)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    tx := db.Begin()</span><br><span class="line">    <span class="keyword">defer</span> tx.Rollback() <span class="comment">// 哪怕事务真的执行成功了，那么调用 tx.Commit() 之后再执行 tx.Rollback() 也不会影响已经提交的事务</span></span><br><span class="line">    <span class="keyword">if</span> err := tx.Create(&amp;Post&#123;Author: <span class="string">"Draveness"</span>&#125;).Error; err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> tx.Commit().Error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>向 defer 关键字传入的函数会在函数返回之前运行, 会在调用时就执行, 解决办法就是使用给defer匿名函数,这样虽然传入时值拷贝,但是拷贝的是函数的指针, 在返回时才执行函数, 就不会导致defer语句中数据在调用时就被生成.  </p>
-<p>defer的<a href="https://github.com/golang/go/blob/cfe3cd903f018dec3cb5997d53b1744df4e53909/src/runtime/runtime2.go#L853-L878" target="_blank" rel="noopener">数据结构</a>:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> _defer <span class="keyword">struct</span> &#123;</span><br><span class="line">	siz     <span class="keyword">int32</span> <span class="comment">// 参数和结果的内存大小</span></span><br><span class="line">	started <span class="keyword">bool</span> </span><br><span class="line">	sp      <span class="keyword">uintptr</span> <span class="comment">// 栈指针</span></span><br><span class="line">	pc      <span class="keyword">uintptr</span> <span class="comment">// 调用方程序计数器</span></span><br><span class="line">	fn      *funcval  <span class="comment">// 传入的函数指针</span></span><br><span class="line">	_panic  *_panic  <span class="comment">// 触发延迟调用的结构体, 可能为空. </span></span><br><span class="line">	link    *_defer <span class="comment">// 所有的结构体都会通过 link 字段串联成链表</span></span><br><span class="line">	... <span class="comment">// 其他垃圾回收使用的字段</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>defer 在编译器看来也是函数调用, 将 defer 关键字都转换成 <a href="https://github.com/golang/go/blob/22d28a24c8b0d99f2ad6da5fe680fa3cfa216651/src/runtime/panic.go#L218-L258" target="_blank" rel="noopener">runtime.deferproc</a> 函数(负责创建新的延迟调用), 还在所有调用 defer 的函数结尾插入了 <a href="https://github.com/golang/go/blob/22d28a24c8b0d99f2ad6da5fe680fa3cfa216651/src/runtime/panic.go#L526-L571" target="_blank" rel="noopener">runtime.deferreturn</a> (负责在函数调用结束时执行所有的延迟调用).</p>
-<p>在deferproc中会创建/获得_defer结构体,设置它的函数指针 fn、程序计数器 pc 和栈指针 sp 并将相关的参数拷贝到相邻的内存空间中, 最后调用<a href="https://github.com/golang/go/blob/a38a917aee626a9b9d5ce2b93964f586bf759ea0/src/runtime/asm_386.s#L1320-L1322" target="_blank" rel="noopener">runtime.return0</a> (避免无线递归调用deferreturn,唯一一个不会触发延迟调用的函数)</p>
-<p>有三种途径获得_defer结构体: 1. 从调度器的延迟调用缓存池 sched.deferpool 中取出结构体并将该结构体追加到当前 Goroutine 的缓存池中；2. 从 Goroutine 的延迟调用缓存池 pp.deferpool 中取出结构体；3. 通过 runtime.mallocgc 创建一个新的结构体</p>
-<p>之后将_defer机构体追加到链表的最前端. 执行会从链表最前端开始执行, 这就是为啥后进先执行的原因. 执行时调用 <a href="https://github.com/golang/go/blob/a38a917aee626a9b9d5ce2b93964f586bf759ea0/src/runtime/asm_386.s#L614-L624" target="_blank" rel="noopener">runtime.jmpdefer</a> 函数传入需要执行的函数和参数,跳转到defer的代码执行, 在执行结束之后跳转回 runtime.deferreturn, 其中会多次判断当前 Goroutine 的 _defer 链表中是否有未执行的剩余结构，在所有的延迟函数调用都执行完成之后，该函数才会返回.</p>
-<p>defer可以读取/修改函数的命名返回值: </p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">c</span><span class="params">()</span> <span class="params">(i <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; i++ &#125;()</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 返回2</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="panic-和-recover"><a href="#panic-和-recover" class="headerlink" title="panic 和 recover"></a>panic 和 recover</h2><ul>
-<li>panic 只会触发当前 Goroutine 的延迟函数调用, 不会触发调用方的(<strong>goroutine实际上都是平行的存在, 不存在树状父子关系</strong>)；</li>
-<li>recover 只有在 defer 函数中调用才会生效；</li>
-<li>panic 允许在 defer 中嵌套多次调用, 多次嵌套调用 panic 也不会影响 defer 函数的正常执行；<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> fmt.Println(<span class="string">"in main"</span>)</span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(<span class="string">"panic again and again"</span>)</span><br><span class="line">		&#125;()</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">"panic again"</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="built_in">panic</span>(<span class="string">"panic once"</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// in main</span></span><br><span class="line"><span class="comment">// panic: panic once</span></span><br><span class="line"><span class="comment">//	panic: panic again</span></span><br><span class="line"><span class="comment">//	panic: panic again and again</span></span><br></pre></td></tr></table></figure>
-
-</li>
-</ul>
-<p>调用panic会创建结构: </p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> _panic <span class="keyword">struct</span> &#123;</span><br><span class="line">	argp      unsafe.Pointer <span class="comment">// 指向 defer 调用时参数的指针</span></span><br><span class="line">	arg       <span class="keyword">interface</span>&#123;&#125; <span class="comment">// 调用 panic 时传入的参数</span></span><br><span class="line">	link      *_panic <span class="comment">// 指向了更早调用的 runtime._panic 结构, 多个panic之间通过 link 的关联形成一个链表</span></span><br><span class="line">	recovered <span class="keyword">bool</span> <span class="comment">// recovered 表示当前 runtime._panic 是否被 recover 恢复</span></span><br><span class="line">	aborted   <span class="keyword">bool</span> <span class="comment">// aborted 表示当前的 panic 是否被强行终止</span></span><br><span class="line"> <span class="comment">// 结构体中的 pc、sp 和 goexit 三个字段都是为了修复 runtime.Goexit 的问题引入的2。该函数能够只结束调用该函数的 Goroutine 而不影响其他的 Goroutine，但是该函数会被 defer 中的 panic 和 recover 取消，引入这三个字段的目的就是为了解决这个问题。</span></span><br><span class="line">	pc        <span class="keyword">uintptr</span></span><br><span class="line">	sp        unsafe.Pointer</span><br><span class="line">	goexit    <span class="keyword">bool</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>gopanic的执行过程:</p>
-<ol>
-<li>创建新的 runtime._panic 结构并添加到所在 Goroutine _panic 链表的最前面；</li>
-<li>在循环中不断从当前 Goroutine 的 _defer 中链表获取 runtime._defer 并调用 runtime.reflectcall 运行延迟调用函数；</li>
-<li>调用 runtime.fatalpanic 中止整个程序,其中打印 panic 消息之后会通过 <a href="https://github.com/golang/go/blob/cbaa666682386fe5350bf87d7d70171704c90fe4/src/runtime/sys_darwin.go#L231-L233" target="_blank" rel="noopener">runtime.exit</a> 退出当前程序并返回错误码(正常退出也是这个函数).</li>
-</ol>
-<p>其中还包括 恢复程序的 recover 分支中的代码; 通过内联优化 defer 调用性能的代码 ; 修复 runtime.Goexit 异常情况的代码</p>
-<p>编译器会将关键字 recover 转换成 <a href="https://github.com/golang/go/blob/22d28a24c8b0d99f2ad6da5fe680fa3cfa216651/src/runtime/panic.go#L1080-L1094" target="_blank" rel="noopener">runtime.gorecover</a> 如果当前 Goroutine 没有调用 panic，那么该函数会直接返回 nil. </p>
-<p>runtime.recovery 在调度过程中会将函数的返回值设置成 1。从 runtime.deferproc 的注释中我们会发现，当 runtime.deferproc 函数的返回值是 1 时，编译器生成的代码会直接跳转到调用方函数返回之前并执行 runtime.deferreturn,跳转到 runtime.deferreturn 函数之后，程序就已经从 panic 中恢复了并执行正常的逻辑</p>
-<h4 id="程序崩溃和恢复的过程总结："><a href="#程序崩溃和恢复的过程总结：" class="headerlink" title="程序崩溃和恢复的过程总结："></a>程序崩溃和恢复的过程总结：</h4><ol>
-<li>编译器会负责做转换关键字的工作；<ul>
-<li>将 panic 和 recover 分别转换成 runtime.gopanic 和 runtime.gorecover；</li>
-<li>将 defer 转换成 deferproc 函数；</li>
-<li>在调用 defer 的函数末尾调用 deferreturn 函数；</li>
-</ul>
-</li>
-<li>在运行过程中遇到 gopanic 方法时，会从 Goroutine 的链表依次取出 _defer 结构体并执行；</li>
-<li>如果调用延迟执行函数时遇到了 gorecover 就会将 _panic.recovered 标记成 true 并返回 panic 的参数；<ul>
-<li>在这次调用结束之后，gopanic 会从 _defer 结构体中取出程序计数器 pc 和栈指针 sp 并调用 recovery 函数进行恢复程序；</li>
-<li>recovery 会根据传入的 pc 和 sp 跳转回 deferproc；</li>
-<li>编译器自动生成的代码会发现 deferproc 的返回值不为 0，这时会跳回 deferreturn 并恢复到正常的执行流程；</li>
-</ul>
-</li>
-<li>如果没有遇到 gorecover 就会依次遍历所有的 _defer 结构，并在最后调用 fatalpanic 中止程序、打印 panic 的参数并返回错误码 2；</li>
-</ol>
-<h2 id="make-和-new"><a href="#make-和-new" class="headerlink" title="make 和 new"></a>make 和 new</h2><p>make 的作用是初始化内置的数据结构，也就是我们在前面提到的切片、哈希表和 Channel；<br>new 的作用是根据传入的类型分配一片内存空间并返回指向这片内存空间的指针;</p>
-<p>在类型检查阶段, make 关键字的 OMAKE 节点根据参数类型的不同转换成了 OMAKESLICE、OMAKEMAP 和 OMAKECHAN 三种不同类型</p>
-<p>在中间代码生成阶段, neew会通过cmd/compile/internal/gc.callnew 函数会将关键字转换成 ONEWOBJ 类型的节点. </p>
-<p>无论是直接使用 new，还是使用 var 初始化变量，它们在编译器看来就是 ONEWOBJ 和 ODCL 节点. </p>
-<p>如果通过 var 或者 new 创建的变量不需要在当前作用域外生存，例如不用作为返回值返回给调用方，那么就不需要初始化在堆上</p>
-<h2 id="上下文-Context"><a href="#上下文-Context" class="headerlink" title="上下文 Context"></a>上下文 Context</h2><p>context.Context 是 Go 语言在 1.7 版本中引入标准库的接口,用于传递调用链上游的一些信息，该接口定义了四个需要实现的方法，其中包括：</p>
-<ol>
-<li>Deadline — 返回 context.Context 被取消的时间，也就是完成工作的截止日期；</li>
-<li>Done — 返回一个 Channel，这个 Channel 会在当前工作完成或者上下文被取消之后关闭，多次调用 Done 方法会返回同一个 Channel；</li>
-<li>Err — 返回 context.Context 结束的原因，它只会在 Done 返回的 Channel 被关闭时才会返回非空的值；<ul>
-<li>如果 context.Context 被取消，会返回 Canceled 错误；</li>
-<li>如果 context.Context 超时，会返回 DeadlineExceeded 错误；</li>
-</ul>
-</li>
-<li>Value — 从 context.Context 中获取键对应的值，对于同一个上下文来说，多次调用 Value 并传入相同的 Key 会返回相同的结果，该方法可以用来传递请求特定的数据；<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Context <span class="keyword">interface</span> &#123;</span><br><span class="line">	Deadline() (deadline time.Time, ok <span class="keyword">bool</span>)</span><br><span class="line">	Done() &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">	Err() error</span><br><span class="line">	Value(key <span class="keyword">interface</span>&#123;&#125;) <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="string">``</span><span class="string">`</span></span><br></pre></td></tr></table></figure>
-context 包中提供的 <code>context.Background、context.TODO、context.WithDeadline 和 context.WithValue</code> 函数会返回实现该接口的私有结构体</li>
-</ol>
-<p>每一个 context.Context 都会从最顶层的 Goroutine 一层一层传递到最下层。context.Context 可以在上层 Goroutine 执行出现错误时，将信号及时同步给下层。多个 Goroutine 同时订阅 ctx.Done() 管道中的消息，一旦接收到取消信号就立刻停止当前正在执行的工作.  </p>
-<p> context.Background、context.TODO都是返回的emptyCtx, 而emptyCtx是实现Context接口的基本空组件.  context.Background 和 context.TODO 函数其实也只是互为别名，没有太大的差别。它们只是在使用和语义上稍有不同：</p>
-<ul>
-<li>context.Background 是上下文的默认值，所有其他的上下文都应该从它衍生（Derived）出来；</li>
-<li>context.TODO 应该只在不确定应该使用哪种上下文时使用；</li>
-</ul>
-<p>在多数情况下，如果当前函数没有上下文作为入参，我们都会使用 context.Background 作为起始的上下文向下传递。</p>
-<p>Context接口中，Done方法的返回值是一个只读channel，当取消信号发出时，这个channel被关闭. </p>
-<p><strong>针对多个goroutine监听同一个channel做相同操作的场景, 不用发多个信号, 直接关闭channel是最好的办法</strong></p>
-<p><em>即使使用了context, 所有信号的发出、接受和处理，包括goroutine树形结构的维护都是需要我们自己在代码中手动去做的，context并不能替我们完成, Context的主要作用有两个：传递取消信号（包括定时取消和手动取消），和传递数据。但这两种功能都需要我们时刻记得要把context传递下去，而且对于取消信号，还需要手动监听手动处理。context并不会帮我们把goroutine停掉。</em></p>
-<h4 id="取消信号"><a href="#取消信号" class="headerlink" title="取消信号"></a>取消信号</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithCancel</span><span class="params">(parent Context)</span> <span class="params">(ctx Context, cancel CancelFunc)</span></span> &#123;</span><br><span class="line">	c := newCancelCtx(parent)</span><br><span class="line">	propagateCancel(parent, &amp;c)</span><br><span class="line">	<span class="keyword">return</span> &amp;c, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; c.cancel(<span class="literal">true</span>, Canceled) &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">propagateCancel</span><span class="params">(parent Context, child canceler)</span></span> &#123;</span><br><span class="line">	done := parent.Done()</span><br><span class="line">	<span class="keyword">if</span> done == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="comment">// 父上下文不会触发取消信号,当前函数会直接返回</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> &lt;-done:</span><br><span class="line">		child.cancel(<span class="literal">false</span>, parent.Err()) <span class="comment">// 父上下文已经被取消</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> p, ok := parentCancelCtx(parent); ok &#123;</span><br><span class="line">	<span class="comment">// 如果父上下文没有被取消，child 会被加入 parent 的 children 列表中，等待 parent 释放取消信号</span></span><br><span class="line">		p.mu.Lock()</span><br><span class="line">		<span class="keyword">if</span> p.err != <span class="literal">nil</span> &#123;</span><br><span class="line">			child.cancel(<span class="literal">false</span>, p.err)</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			p.children[child] = <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		p.mu.Unlock()</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">// 默认情况下会同时监听父子的Done channel</span></span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> &lt;-parent.Done():</span><br><span class="line">				child.cancel(<span class="literal">false</span>, parent.Err()) <span class="comment">// 在父关闭时取消子的上下文</span></span><br><span class="line">			<span class="keyword">case</span> &lt;-child.Done():</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;()</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 关闭上下文中的 Channel 并向所有的子上下文同步取消信号</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *cancelCtx)</span> <span class="title">cancel</span><span class="params">(removeFromParent <span class="keyword">bool</span>, err error)</span></span> &#123;</span><br><span class="line">	c.mu.Lock()</span><br><span class="line">	<span class="keyword">if</span> c.err != <span class="literal">nil</span> &#123;</span><br><span class="line">		c.mu.Unlock()</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	c.err = err</span><br><span class="line">	<span class="keyword">if</span> c.done == <span class="literal">nil</span> &#123;</span><br><span class="line">		c.done = closedchan</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">close</span>(c.done)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> child := <span class="keyword">range</span> c.children &#123;</span><br><span class="line">		child.cancel(<span class="literal">false</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">	c.children = <span class="literal">nil</span></span><br><span class="line">	c.mu.Unlock()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> removeFromParent &#123;</span><br><span class="line">		removeChild(c.Context, c)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>context.WithDeadline 方法在创建 context.timerCtx 的过程中，判断了父上下文的截止日期与当前日期，并通过 time.AfterFunc 创建定时器，当时间超过了截止日期后会调用 context.timerCtx.cancel 方法同步取消信号。WithTimeout其实是直接调用WithDeadline的. context.timerCtx 结构体内部不仅通过嵌入了context.cancelCtx 结构体继承了相关的变量和方法，还通过持有的定时器 timer 和截止时间 deadline 实现了定时取消这一功能. context.timerCtx.cancel 方法不仅调用了 context.cancelCtx.cancel，还会停止持有的定时器减少不必要的资源浪费</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> timerCtx <span class="keyword">struct</span> &#123;</span><br><span class="line">	cancelCtx</span><br><span class="line">	timer *time.Timer <span class="comment">// Under cancelCtx.mu.</span></span><br><span class="line"></span><br><span class="line">	deadline time.Time</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p> context.WithValue 函数能从父上下文中创建一个子上下文，传值的子上下文使用 context.valueCtx 类型, 这样就生成了树状的层层包裹的结构. 通过Value方法查找上下文中的键值</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> valueCtx <span class="keyword">struct</span> &#123;</span><br><span class="line">	Context</span><br><span class="line">	key, val <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *valueCtx)</span> <span class="title">Value</span><span class="params">(key <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">interface</span></span>&#123;&#125; &#123;</span><br><span class="line">	<span class="keyword">if</span> c.key == key &#123;</span><br><span class="line">		<span class="keyword">return</span> c.val</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> c.Context.Value(key) <span class="comment">// 如果 context.valueCtx 中存储的键值对与 context.valueCtx.Value 方法中传入的参数不匹配，就会从父上下文中查找该键对应的值直到在某个父上下文中返回 nil 或者查找到对应的值. PS: 这里返回nil是因为最顶层是emptyCtx, 其Value直接返回nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="同步原语与锁"><a href="#同步原语与锁" class="headerlink" title="同步原语与锁"></a>同步原语与锁</h2><h4 id="Mutex"><a href="#Mutex" class="headerlink" title="Mutex"></a>Mutex</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Mutex <span class="keyword">struct</span> &#123;</span><br><span class="line">	state <span class="keyword">int32</span> <span class="comment">// 表示当前互斥锁的状态, 最低三位分别表示 mutexLocked、mutexWoken 和 mutexStarving，剩下的位置用来表示当前有多少个 Goroutine 等待互斥锁的释放. 在默认情况下，互斥锁的所有状态位都是 0</span></span><br><span class="line">	sema  <span class="keyword">uint32</span> <span class="comment">// 用于控制锁状态的信号量, </span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>sync.Mutex 有两种模式 — 正常模式和饥饿模式.  相比于饥饿模式，正常模式下的互斥锁能够提供更好地性能，饥饿模式的能避免 Goroutine 由于陷入等待无法获取锁而造成的高尾延时.</p>
-<ul>
-<li>在正常模式下，锁的等待者会按照先进先出的顺序获取锁。但是刚被唤起的 Goroutine 与新创建的 Goroutine 竞争时，大概率会获取不到锁，为了减少这种情况的出现，一旦 Goroutine 超过 1ms 没有获取到锁，它就会将当前互斥锁切换饥饿模式，防止部分 Goroutine 被『饿死』. </li>
-<li>饥饿模式是在 Go 语言 1.9 版本引入的优化，引入的目的是保证互斥锁的公平性（Fairness）. 在饥饿模式中，互斥锁会直接交给等待队列最前面的 Goroutine。新的 Goroutine 在该状态下不能获取锁、也不会进入自旋状态，它们只会在队列的末尾等待。如果一个 Goroutine 获得了互斥锁并且它在队列的末尾或者它等待的时间少于 1ms，那么当前的互斥锁就会被切换回正常模式。</li>
-</ul>
-<p>加锁和解锁过程，它们分别使用 sync.Mutex.Lock 和 sync.Mutex.Unlock 方法. 这两个方法就是CAS自旋方式. </p>
-<p>在多核的 CPU 上，自旋可以避免 Goroutine 的切换，使用恰当会对性能带来很大的增益，但是使用的不恰当就会拖慢整个程序，所以 Goroutine 进入自旋的条件非常苛刻：</p>
-<ol>
-<li>互斥锁只有在普通模式才能进入自旋；</li>
-<li>sync.runtime_canSpin 在以下条件下需要返回 true：<ul>
-<li>运行在多 CPU 的机器上；</li>
-<li>当前 Goroutine 为了获取该锁进入自旋的次数小于四次；</li>
-<li>当前机器上至少存在一个正在运行的处理器 P 并且处理的运行队列为空；</li>
-</ul>
-</li>
-</ol>
-<p>一旦当前 Goroutine 能够进入自旋就会调用sync.runtime_doSpin 和 runtime.procyield 并执行 30 次的 PAUSE 指令，该指令只会占用 CPU 并消耗 CPU 时间</p>
-<p>处理了自旋相关的特殊逻辑之后，互斥锁会根据上下文计算当前互斥锁最新的状态。几个不同的条件分别会更新 state 字段中存储的不同信息 — mutexLocked、mutexStarving、mutexWoken 和 mutexWaiterShift, 计算了新的互斥锁状态之后，就会使用 CAS 函数 atomic.CompareAndSwapInt32 更新该状态：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">new</span> := old</span><br><span class="line"><span class="keyword">if</span> old&amp;mutexStarving == <span class="number">0</span> &#123;</span><br><span class="line">	<span class="built_in">new</span> |= mutexLocked</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> old&amp;(mutexLocked|mutexStarving) != <span class="number">0</span> &#123;</span><br><span class="line">	<span class="built_in">new</span> += <span class="number">1</span> &lt;&lt; mutexWaiterShift</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> starving &amp;&amp; old&amp;mutexLocked != <span class="number">0</span> &#123;</span><br><span class="line">	<span class="built_in">new</span> |= mutexStarving</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> awoke &#123;</span><br><span class="line">	<span class="built_in">new</span> &amp;^= mutexWoken</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在饥饿模式下，当前 Goroutine 会获得互斥锁，如果等待队列中只存在当前 Goroutine，互斥锁还会从饥饿模式中退出</p>
-<p>解锁: </p>
-<ol>
-<li>如果该函数返回的新状态等于 0，当前 Goroutine 就成功解锁了互斥锁；</li>
-<li>如果该函数返回的新状态不等于 0，这段代码会调用 sync.Mutex.unlockSlow 方法开始慢速解锁</li>
-</ol>
-<h4 id="Mutex加锁与解锁总结"><a href="#Mutex加锁与解锁总结" class="headerlink" title="Mutex加锁与解锁总结"></a>Mutex加锁与解锁总结</h4><p>加锁：</p>
-<ul>
-<li>如果互斥锁处于初始化状态，就会直接通过置位 mutexLocked 加锁；</li>
-<li>如果互斥锁处于 mutexLocked 并且在普通模式下工作，就会进入自旋，执行 30 次 PAUSE 指令消耗 CPU 时间等待锁的释放；</li>
-<li>如果当前 Goroutine 等待锁的时间超过了 1ms，互斥锁就会切换到饥饿模式；</li>
-<li>互斥锁在正常情况下会通过 sync.runtime_SemacquireMutex 函数将尝试获取锁的 Goroutine 切换至休眠状态，等待锁的持有者唤醒当前 Goroutine；</li>
-<li>如果当前 Goroutine 是互斥锁上的最后一个等待的协程或者等待的时间小于 1ms，当前 Goroutine 会将互斥锁切换回正常模式；</li>
-</ul>
-<p>解锁：</p>
-<ul>
-<li>当互斥锁已经被解锁时，那么调用 sync.Mutex.Unlock 会直接抛出异常；</li>
-<li>当互斥锁处于饥饿模式时，会直接将锁的所有权交给队列中的下一个等待者，等待者会负责设置 mutexLocked 标志位；</li>
-<li>当互斥锁处于普通模式时，如果没有 Goroutine 等待锁的释放或者已经有被唤醒的 Goroutine 获得了锁，就会直接返回；在其他情况下会通过 sync.runtime_Semrelease 唤醒对应的 Goroutine；</li>
-</ul>
-<h4 id="读写锁RWMutex"><a href="#读写锁RWMutex" class="headerlink" title="读写锁RWMutex"></a>读写锁RWMutex</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> RWMutex <span class="keyword">struct</span> &#123;</span><br><span class="line">	w           Mutex <span class="comment">// 复用互斥锁提供的能力</span></span><br><span class="line">	writerSem   <span class="keyword">uint32</span> <span class="comment">// 用于写等待读</span></span><br><span class="line">	readerSem   <span class="keyword">uint32</span> <span class="comment">// 用于读等待写</span></span><br><span class="line">	readerCount <span class="keyword">int32</span> <span class="comment">// 存储了当前正在执行的读操作的数量</span></span><br><span class="line">	readerWait  <span class="keyword">int32</span> <span class="comment">// 表示当写操作被阻塞时等待的读操作个数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><em>获取写锁时会先阻塞写锁的获取，后阻塞读锁的获取，这种策略能够保证读操作不会被连续的写操作『饿死』。</em></p>
-<p>小结: </p>
-<ul>
-<li>调用 sync.RWMutex.Lock 尝试获取写锁时；<ul>
-<li>每次 sync.RWMutex.RUnlock 都会将 readerWait 其减一，当它归零时该 Goroutine 就会获得写锁；</li>
-<li>将 readerCount 减少 rwmutexMaxReaders 个数以阻塞后续的读操作；</li>
-</ul>
-</li>
-<li>调用 sync.RWMutex.Unlock 释放写锁时，会先通知所有的读操作，然后才会释放持有的互斥锁；</li>
-</ul>
-<h4 id="WaitGroup"><a href="#WaitGroup" class="headerlink" title="WaitGroup"></a>WaitGroup</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> WaitGroup <span class="keyword">struct</span> &#123;</span><br><span class="line">	noCopy noCopy <span class="comment">// 保证 sync.WaitGroup 不会被开发者通过再赋值的方式拷贝</span></span><br><span class="line">	state1 [<span class="number">3</span>]<span class="keyword">uint32</span> <span class="comment">// 存储着状态和信号量</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>sync.noCopy 是一个特殊的私有结构体，tools/go/analysis/passes/copylock 包中的分析器会在编译期间检查被拷贝的变量中是否包含 sync.noCopy 结构体，如果包含该结构体就会在运行时报出错误.</strong></p>
-<p>虽然 sync.WaitGroup.Add 方法传入的参数可以为负数，但是计数器只能是非负数，一旦出现负数就会发生程序崩溃。当调用计数器归零，也就是所有任务都执行完成时，就会通过 sync.runtime_Semrelease 唤醒处于等待状态的所有 Goroutine。</p>
-<p>小结:</p>
-<ul>
-<li>sync.WaitGroup 必须在 sync.WaitGroup.Wait 方法返回之后才能被重新使用；</li>
-<li>sync.WaitGroup.Done 只是对 sync.WaitGroup.Add 方法的简单封装，我们可以向 sync.WaitGroup.Add 方法传入任意负数（需要保证计数器非负）快速将计数器归零以唤醒其他等待的 Goroutine；</li>
-<li>可以同时有多个 Goroutine 等待当前 sync.WaitGroup 计数器的归零，这些 Goroutine 会被同时唤醒；</li>
-</ul>
-<h4 id="Once"><a href="#Once" class="headerlink" title="Once"></a>Once</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Once <span class="keyword">struct</span> &#123;</span><br><span class="line">	done <span class="keyword">uint32</span> <span class="comment">// 用于标识代码块是否执行过的 done</span></span><br><span class="line">	m    Mutex</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span> <span class="title">Do</span><span class="params">(f <span class="keyword">func</span>()</span>)</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> atomic.LoadUint32(&amp;o.done) == <span class="number">0</span> &#123;</span><br><span class="line">		o.doSlow(f)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span> <span class="title">doSlow</span><span class="params">(f <span class="keyword">func</span>()</span>)</span> &#123;</span><br><span class="line">	o.m.Lock()</span><br><span class="line">	<span class="keyword">defer</span> o.m.Unlock()</span><br><span class="line">	<span class="keyword">if</span> o.done == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> atomic.StoreUint32(&amp;o.done, <span class="number">1</span>)</span><br><span class="line">		f()</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注意: </p>
-<ul>
-<li>sync.Once.Do 方法中传入的函数只会被执行一次，哪怕函数中发生了 panic；</li>
-<li>两次调用 sync.Once.Do 方法传入不同的函数也只会执行第一次调用的函数；</li>
-</ul>
-<h4 id="Cond"><a href="#Cond" class="headerlink" title="Cond"></a>Cond</h4><p>Go 语言标准库中的 sync.Cond 一个条件变量，它可以让一系列的 Goroutine 都在满足特定条件时被唤醒。每一个 sync.Cond 结构体在初始化时都需要传入一个互斥锁.</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Cond <span class="keyword">struct</span> &#123;</span><br><span class="line">	noCopy  noCopy <span class="comment">// 用于保证结构体不会在编译期间拷贝</span></span><br><span class="line">	L       Locker <span class="comment">//  用于保护内部的 notify 字段，Locker 接口类型的变量</span></span><br><span class="line">	notify  notifyList <span class="comment">// 一个 Goroutine 的链表，它是实现同步机制的核心结构</span></span><br><span class="line">	checker copyChecker  <span class="comment">// 用于禁止运行期间发生的拷贝</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> notifyList <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="comment">//head 和 tail 分别指向的链表的头和尾，wait 和 notify 分别表示当前正在等待的和已经通知到的 Goroutine</span></span><br><span class="line">	wait <span class="keyword">uint32</span></span><br><span class="line">	notify <span class="keyword">uint32</span></span><br><span class="line"></span><br><span class="line">	lock mutex</span><br><span class="line">	head *sudog</span><br><span class="line">	tail *sudog</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><em>Go 语言切换 Goroutine 时经常会使用的方法: 调用 runtime.goparkunlock 将当前 Goroutine 陷入休眠状态, 它会直接让出当前处理器的使用权并等待调度器的唤醒.</em></p>
-<p>sync.Cond 不是一个常用的同步机制，在遇到长时间条件无法满足时，与使用 for {} 进行忙碌等待相比，sync.Cond 能够让出处理器的使用权。在使用的过程中我们需要注意以下问题：</p>
-<ol>
-<li>sync.Cond.Wait 方法在调用之前一定要使用获取互斥锁，否则会触发程序崩溃；</li>
-<li>sync.Cond.Signal 方法唤醒的 Goroutine 都是队列最前面、等待最久的 Goroutine；</li>
-<li>sync.Cond.Broadcast 会按照一定顺序广播通知等待的全部 Goroutine；</li>
-</ol>
-<h4 id="扩展原语"><a href="#扩展原语" class="headerlink" title="扩展原语"></a>扩展原语</h4><p>Go 语言还在子仓库 sync 中提供了四种扩展原语，x/sync/errgroup.Group、x/sync/semaphore.Weighted、x/sync/singleflight.Group 和 x/sync/syncmap.Map，其中的 x/sync/syncmap.Map 在 1.9 版本中被移植到了标准库中</p>
-<ol>
-<li>ErrGroup: 如果返回错误, 这一组G中至少有一个错误, 如果返回空,则所有G成功执行. <a href="https://github.com/golang/sync/blob/cd5d95a43a6e21273425c7ae415d3df9ea832eeb/errgroup/errgroup.go#L18-L25" target="_blank" rel="noopener">x/sync/errgroup.Group</a><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Group <span class="keyword">struct</span> &#123;</span><br><span class="line">	cancel <span class="function"><span class="keyword">func</span><span class="params">()</span> // 创建 <span class="title">context</span>.<span class="title">Context</span> 时返回的取消函数，用于在多个 <span class="title">Goroutine</span> 之间同步取消信号</span></span><br><span class="line">	wg sync.WaitGroup <span class="comment">// 用于等待一组 Goroutine 完成子任务的同步原语</span></span><br><span class="line">	errOnce sync.Once <span class="comment">// 用于保证只接收一个子任务返回的错误；</span></span><br><span class="line">	err     error</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<ul>
-<li>x/sync/errgroup.Group 在出现错误或者等待结束后都会调用 context.Context 的 cancel 方法同步取消信号；</li>
-<li>只有第一个出现的错误才会被返回，剩余的错误都会被直接抛弃；</li>
-</ul>
-<ol start="2">
-<li>带权重的信号量 <a href="https://github.com/golang/sync/blob/cd5d95a43a6e21273425c7ae415d3df9ea832eeb/semaphore/semaphore.go#L28-L33" target="_blank" rel="noopener">x/sync/semaphore.Weighted</a><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Weighted <span class="keyword">struct</span> &#123;</span><br><span class="line">	size    <span class="keyword">int64</span> <span class="comment">// 当前信号量的上限</span></span><br><span class="line">	cur     <span class="keyword">int64</span> <span class="comment">// 计数器, 计数范围0-size</span></span><br><span class="line">	mu      sync.Mutex</span><br><span class="line">	waiters list.List <span class="comment">// 其中存储着等待获取资源的 Goroutine</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ol>
-<ul>
-<li>x/sync/semaphore.Weighted.Acquire 和 x/sync/semaphore.Weighted.TryAcquire 方法都可以用于获取资源，前者会阻塞地获取信号量，后者会非阻塞地获取信号量；</li>
-<li>x/sync/semaphore.Weighted.Release 方法会按照 FIFO 的顺序唤醒可以被唤醒的 Goroutine；</li>
-<li>如果一个 Goroutine 获取了较多地资源，由于 x/sync/semaphore.Weighted.Release 的释放策略可能会等待比较长的时间；</li>
-</ul>
-<ol start="3">
-<li><a href="https://github.com/golang/sync/blob/cd5d95a43a6e21273425c7ae415d3df9ea832eeb/singleflight/singleflight.go#L33-L36" target="_blank" rel="noopener">x/sync/singleflight.Group</a> 是 Go 语言扩展包中提供了另一种同步原语，它能够在一个服务中抑制对下游的多次重复请求。</li>
-</ol>
-<p>在资源的获取非常昂贵时（例如：访问缓存、数据库），就很适合使用 x/sync/singleflight.Group 对服务进行优化。我们来了解一下它的使用方法：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> service <span class="keyword">struct</span> &#123;</span><br><span class="line">    requestGroup singleflight.Group</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *service)</span> <span class="title">handleRequest</span><span class="params">(ctx context.Context, request Request)</span> <span class="params">(Response, error)</span></span> &#123;</span><br><span class="line">    v, err, _ := requestGroup.Do(request.Hash(), <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="params">(<span class="keyword">interface</span>&#123;&#125;, error)</span></span> &#123;</span><br><span class="line">        rows, err := <span class="comment">// select * from tables</span></span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> rows, <span class="literal">nil</span></span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Response&#123;</span><br><span class="line">        rows: rows,</span><br><span class="line">    &#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>因为请求的哈希在业务上一般表示相同的请求，所以上述代码使用它作为请求的键。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Group <span class="keyword">struct</span> &#123;</span><br><span class="line">	mu sync.Mutex</span><br><span class="line">	m  <span class="keyword">map</span>[<span class="keyword">string</span>]*call</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> call <span class="keyword">struct</span> &#123;</span><br><span class="line">	wg sync.WaitGroup</span><br><span class="line">    <span class="comment">// val 和 err 字段都只会在执行传入的函数时赋值一次并在 sync.WaitGroup.Wait 返回时被读取</span></span><br><span class="line">	val <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">	err error</span><br><span class="line">    <span class="comment">// dups 和 chans 两个字段分别存储了抑制的请求数量以及用于同步结果的 Channel</span></span><br><span class="line">	dups  <span class="keyword">int</span></span><br><span class="line">	chans []<span class="keyword">chan</span>&lt;- Result</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>x/sync/singleflight.Group.Do 和 x/sync/singleflight.Group.DoChan 一个用于同步阻塞调用传入的函数，一个用于异步调用传入的参数并通过 Channel 接收函数的返回值；</li>
-<li>x/sync/singleflight.Group.Forget 方法可以通知 x/sync/singleflight.Group 在持有的映射表中删除某个键，接下来对该键的调用就不会等待前面的函数返回了；</li>
-<li>一旦调用的函数返回了错误，所有在等待的 Goroutine 也都会接收到同样的错误；</li>
-</ul>
-<h2 id="计时器"><a href="#计时器" class="headerlink" title="计时器"></a>计时器</h2><p>Go 1.10 之前的计时器都使用最小四叉堆实现. 所有计时器的结构体都会共享全局的 []*timer即最小四叉堆. G会在时间驱动事件: 计时器到期/加入触发时间更早的新计时器时被唤醒. 由于操作需要获取全局唯一的呼哧锁互斥锁,会影响计时器性能.</p>
-<p>Go 1.10 将全局的四叉堆分割成了 64 个更小的四叉堆5。在理想情况下，四叉堆的数量应该等于处理器的数量，但是这需要实现动态的分配过程，所以经过权衡最终选择初始化 64 个四叉堆，以牺牲内存占用的代价换取性能的提升。</p>
-<p>如果当前机器上的处理器 P 的个数超过了 64，多个处理器上的计时器就可能存储在同一个桶中。每一个计时器桶都由一个运行 runtime.timerproc#76f4fd8 函数的 Goroutine 处理. 将全局计时器分片的方式，虽然能够降低锁的粒度，提高计时器的性能，但是 runtime.timerproc#76f4fd8 造成的处理器和线程之间频繁的上下文切换却成为了影响计时器性能的首要因素。</p>
-<p>在1,14的实现中，计时器桶已经被移除，所有的计时器都以最小四叉堆的形式存储在处理器 runtime.p 中。目前计时器都交由处理器的网络轮询器和调度器触发，这种方式能够充分利用本地性、减少线上上下文的切换开销.</p>
-<p><strong>运行时使用状态机的方式处理全部的计时器，其中包括 10 种状态和 7 种操作。</strong></p>
-<p>timerNoStatus    还没有设置状态<br>timerWaiting    等待触发<br>timerRunning    运行计时器函数<br>timerDeleted    被删除<br>timerRemoving    正在被删除<br>timerRemoved    已经被停止并从堆中删除<br>timerModifying    正在被修改<br>timerModifiedEarlier    被修改到了更早的时间<br>timerModifiedLater    被修改到了更晚的时间<br>timerMoving    已经被修改正在被移动</p>
-<ul>
-<li>“timerRunning、timerRemoving、timerModifying” “和” “timerMoving” “—“ “停留的时间都比较短；”</li>
-<li>“timerWaiting、timerRunning、timerDeleted、timerRemoving、timerModifying、timerModifiedEarlier、timerModifiedLater” “和” “timerMoving” “—“ “计时器在处理器的堆上；”</li>
-<li>“timerNoStatus” “和” “timerRemoved” “—“ “计时器不在堆上；”</li>
-<li>“timerModifiedEarlier” “和” “timerModifiedLater” “—“ “计时器虽然在堆上，但是可能位于错误的位置上，需要重新排序；”</li>
-</ul>
-<p>runtime.addtimer — 向当前处理器增加新的计时器；<br>runtime.deltimer — 将计时器标记成 timerDeleted 删除处理器中的计时器；<br>runtime.modtimer — 网络轮询器会调用该函数修改计时器；<br>runtime.resettimer — 修改已经失效的计时器的到期时间，将其变成活跃的计时器；<br>runtime.cleantimers — 清除队列头中的计时器，能够提升程序创建和删除计时器的性能；<br>runtime.adjusttimers — 调整处理器持有的计时器堆，包括移动会稍后触发的计时器、删除标记为 timerDeleted 的计时器；<br>runtime.runtimer — 检查队列头中的计时器，在其准备就绪时运行该计时器；</p>
-<p>go会在两个模块中触发计时器:</p>
-<ol>
-<li>调度器调度时会检查处理器中的计时器是否准备就绪；</li>
-<li>系统监控会检查是否有未执行的到期计时器；</li>
-</ol>
-<h2 id="channel"><a href="#channel" class="headerlink" title="channel"></a>channel</h2><p>目前的 Channel 收发操作均遵循了先入先出（FIFO）的设计，具体规则如下：</p>
-<ol>
-<li>先从 Channel 读取数据的 Goroutine 会先接收到数据；</li>
-<li>先向 Channel 发送数据的 Goroutine 会得到先发送数据的权利；</li>
-</ol>
-<p>无锁（lock-free）队列更准确的描述是使用乐观并发控制的队列。乐观并发控制也叫乐观锁.乐观并发控制本质上是基于验证的协议，我们使用原子指令 CAS（compare-and-swap 或者 compare-and-set）在多线程中同步数据，无锁队列的实现也依赖这一原子指令。</p>
-<p>Channel 在运行时的内部表示是 runtime.hchan，该结构体中包含了一个用于保护成员变量的互斥锁，从某种程度上说，Channel 是一个用于同步和通信的有锁队列</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> hchan <span class="keyword">struct</span> &#123;</span><br><span class="line">	qcount   <span class="keyword">uint</span></span><br><span class="line">	dataqsiz <span class="keyword">uint</span></span><br><span class="line">	buf      unsafe.Pointer</span><br><span class="line">	elemsize <span class="keyword">uint16</span></span><br><span class="line">	closed   <span class="keyword">uint32</span></span><br><span class="line">	elemtype *_type</span><br><span class="line">	sendx    <span class="keyword">uint</span>  </span><br><span class="line">	recvx    <span class="keyword">uint</span></span><br><span class="line">	recvq    waitq</span><br><span class="line">	sendq    waitq</span><br><span class="line"></span><br><span class="line">	lock mutex</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>qcount — Channel 中的元素个数；<br>dataqsiz — Channel 中的循环队列的长度；<br>buf — Channel 的缓冲区数据指针；<br>sendx — Channel 的发送操作处理到的位置；<br>recvx — Channel 的接收操作处理到的位置；<br>elemsize 和 elemtype 分别表示当前 Channel 能够收发的元素类型和大小；sendq 和 recvq 存储了当前 Channel 由于缓冲区空间不足而阻塞的 Goroutine 列表，这些等待队列使用双向链表 runtime.waitq 表示，链表中所有的元素都是 runtime.sudog 结构：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> waitq <span class="keyword">struct</span> &#123;</span><br><span class="line">	first *sudog</span><br><span class="line">	last  *sudog</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>根据 Channel 中收发元素的类型和缓冲区的大小初始化 runtime.hchan 结构体和缓冲区：</p>
-<ul>
-<li>如果当前 Channel 中不存在缓冲区，那么就只会为 runtime.hchan 分配一段内存空间；</li>
-<li>如果当前 Channel 中存储的类型不是指针类型，就会为当前的 Channel 和底层的数组分配一块连续的内存空间；</li>
-<li>在默认情况下会单独为 runtime.hchan 和缓冲区分配内存；</li>
-</ul>
-<p>向 Channel 发送数据时遇到的几种情况：</p>
-<ol>
-<li>如果当前 Channel 的 recvq 上存在已经被阻塞的 Goroutine，那么会直接将数据发送给当前的 Goroutine 并将其设置成下一个运行的 Goroutine；</li>
-<li>如果 Channel 存在缓冲区并且其中还有空闲的容量，我们就会直接将数据直接存储到当前缓冲区 sendx 所在的位置上；</li>
-<li>如果不满足上面的两种情况，就会创建一个 runtime.sudog 结构并将其加入 Channel 的 sendq 队列中，当前 Goroutine 也会陷入阻塞等待其他的协程从 Channel 接收数据；</li>
-</ol>
-<p>发送数据的过程中包含几个会触发 Goroutine 调度的时机：</p>
-<ol>
-<li>发送数据时发现 Channel 上存在等待接收数据的 Goroutine，立刻设置处理器的 runnext 属性，但是并不会立刻触发调度；</li>
-<li>发送数据时并没有找到接收方并且缓冲区已经满了，这时就会将自己加入 Channel 的 sendq 队列并调用 runtime.goparkunlock 触发 Goroutine 的调度让出处理器的使用权；</li>
-</ol>
-<p>Channel 中接收数据时可能会发生的五种情况：</p>
-<ol>
-<li>如果 Channel 为空，那么就会直接调用 runtime.gopark 挂起当前 Goroutine；</li>
-<li>如果 Channel 已经关闭并且缓冲区没有任何数据，runtime.chanrecv 函数会直接返回；</li>
-<li>如果 Channel 的 sendq 队列中存在挂起的 Goroutine，就会将 recvx 索引所在的数据拷贝到接收变量所在的内存空间上并将 sendq 队列中 Goroutine 的数据拷贝到缓冲区；</li>
-<li>如果 Channel 的缓冲区中包含数据就会直接读取 recvx 索引对应的数据；</li>
-<li>在默认情况下会挂起当前的 Goroutine，将 runtime.sudog 结构加入 recvq 队列并陷入休眠等待调度器的唤醒；</li>
-</ol>
-<p>Channel 接收数据时，会触发 Goroutine 调度的两个时机：</p>
-<ol>
-<li>当 Channel 为空时；</li>
-<li>当缓冲区中不存在数据并且也不存在数据的发送者时；</li>
-</ol>
-<p>关闭channel就是将recvq 和 sendq 两个队列中的数据加入到 Goroutine 列表 gList 中,同时清除所有sudog上未被处理的元素,最后为gList中的所有G调用 runtime.goready 触发调度.</p>
-<p><em>go的channel中会有一个readG和writeG的队列结构, 保存了读写该chan的goroutine的指针信息, 这样在chan中数据交互时通过runtime去调度对应的G进入运行队列. 所以对于无buffer的chan, 如果写端先执行会一直等待直到读端读取数据才会写入, 并且这里还对读写的位置进行了优化, 写就直接写到等待的G的地址空间中.</em></p>
-<h2 id="调度器"><a href="#调度器" class="headerlink" title="调度器"></a>调度器</h2><p>处理器持有一个由可运行的 Goroutine 组成的运行队列 runq，还反向持有一个线程。调度器在调度时会从处理器的队列中选择队列头的 Goroutine 放到线程 M 上执行. 处理器 P 是线程M和 Goroutine 的中间层. </p>
-<p>Go 调度器对 Goroutine 的上下文切换约为 0.2us，相比于操作系统的线程上下文切换消耗约1us左右时间来说, 减少了 80% 的额外开销</p>
-<p><em>在系统监控中，如果一个 Goroutine 的运行时间超过 10ms, 就会触发抢占.</em> </p>
-<p>基于协作的抢占式调度的工作原理：</p>
-<ol>
-<li>编译器会在调用函数前插入 runtime.morestack；</li>
-<li>Go 语言运行时会在垃圾回收暂停程序、系统监控发现 Goroutine 运行超过 10ms 时发出抢占请求 StackPreempt；</li>
-<li>当发生函数调用时，可能会执行编译器插入的 runtime.morestack 函数，它调用的 runtime.newstack 会检查 Goroutine 的 stackguard0 字段是否为 StackPreempt；</li>
-<li>如果 stackguard0 是 StackPreempt，就会触发抢占让出当前线程；</li>
-</ol>
-<p>Go 语言在 1.14 版本中实现了非协作的抢占式调度,以增加触发抢占式调度的时间点以减少存在的边缘情况. 目前的抢占式调度也只会在垃圾回收扫描任务时触发.</p>
-<p>抢占式调度过程：</p>
-<ol>
-<li>程序启动时，在 runtime.sighandler 函数中注册 SIGURG 信号的处理函数 runtime.doSigPreempt；</li>
-<li>在触发垃圾回收的栈扫描时会调用 runtime.suspendG 挂起 Goroutine，该函数会执行下面的逻辑：</li>
-<li>将 _Grunning 状态的 Goroutine 标记成可以被抢占，即将 preemptStop 设置成 true；</li>
-<li>调用 runtime.preemptM 触发抢占；</li>
-<li>runtime.preemptM 会调用 runtime.signalM 向线程发送信号 SIGURG；</li>
-<li>操作系统会中断正在运行的线程并执行预先注册的信号处理函数 runtime.doSigPreempt；</li>
-<li>runtime.doSigPreempt 函数会处理抢占信号，获取当前的 SP 和 PC 寄存器并调用 runtime.sigctxt.pushCall；</li>
-<li>runtime.sigctxt.pushCall 会修改寄存器并在程序回到用户态时执行 runtime.asyncPreempt；</li>
-<li>汇编指令 runtime.asyncPreempt 会调用运行时函数 runtime.asyncPreempt2；</li>
-<li>runtime.asyncPreempt2 会调用 runtime.preemptPark；</li>
-<li>runtime.preemptPark 会修改当前 Goroutine 的状态到 _Gpreempted 并调用 runtime.schedule 让当前函数陷入休眠并让出线程，调度器会选择其它的 Goroutine 继续执行；</li>
-</ol>
-<p>选择 SIGURG 作为触发异步抢占的信号的原因: </p>
-<ol>
-<li>该信号需要被调试器透传；</li>
-<li>该信号不会被内部的 libc 库使用并拦截；</li>
-<li>该信号可以随意出现并且不触发任何后果；</li>
-<li>我们需要处理多个平台上的不同信号；</li>
-</ol>
-<p>STW 和栈扫描是一个可以抢占的安全点（Safe-points），所以 Go 语言在这里先加入抢占功能。基于信号的抢占式调度只解决了垃圾回收和栈扫描时存在的问题，它到目前为止没有解决全部问题，但是这种真抢占式调度时调度器走向完备的开始.</p>
-<p>非均匀内存访问（Non-uniform memory access，NUMA）调度器现在只是 Go 语言的提案，因为该提案过于复杂，而目前的调度器的性能已经足够优异，所以暂时没有实现该提案。该提案的原理就是通过拆分全局资源，让各个处理器能够就近获取，减少锁竞争并增加数据的局部性。</p>
-<p><em>在目前的运行时中，线程、处理器、网络轮询器、运行队列、全局内存分配器状态、内存分配缓存和垃圾收集器都是全局资源。</em></p>
-<p>NUMA调度器实现: 堆栈、全局运行队列和线程池会按照 NUMA 节点进行分区，网络轮询器和计时器会由单独的处理器持有.<br><img src="../../../media/qownnotes-media-JmLqSj-2095154484.png" alt="qownnotes-media-JmLqSj"></p>
-<p><a href="https://img.draveness.me/2020-02-02-15805792666185-go-numa-scheduler-architecture.png" target="_blank" rel="noopener">https://img.draveness.me/2020-02-02-15805792666185-go-numa-scheduler-architecture.png</a></p>
-<p>G — 表示 Goroutine，它是一个待执行的任务；<br>M — 表示操作系统的线程，它由操作系统的调度器调度和管理；<br>P — 表示处理器，它可以被看做运行在线程上的本地调度器；</p>
-<p>G中包含有ID: goid ,该字段对开发者不可见，Go 团队认为引入 ID 会让部分 Goroutine 变得更特殊，从而限制语言的并发能力</p>
-<p>G的状态:</p>
-<ul>
-<li>_Gidle    刚刚被分配并且还没有被初始化</li>
-<li>_Grunnable    没有执行代码，没有栈的所有权，存储在运行队列中</li>
-<li>_Grunning    可以执行代码，拥有栈的所有权，被赋予了内核线程 M 和处理器 P</li>
-<li>_Gsyscall    正在执行系统调用，拥有栈的所有权，没有执行用户代码，被赋予了内核线程 M 但是不在运行队列上</li>
-<li>_Gwaiting    由于运行时而被阻塞，没有执行用户代码并且不在运行队列上，但是可能存在于 Channel 的等待队列上</li>
-<li>_Gdead    没有被使用，没有执行代码，可能有分配的栈</li>
-<li>_Gcopystack    栈正在被拷贝，没有执行代码，不在运行队列上</li>
-<li>_Gpreempted    由于抢占而被阻塞，没有执行用户代码并且不在运行队列上，等待唤醒</li>
-<li>_Gscan    GC 正在扫描栈空间，没有执行代码，可以与其他状态同时存在</li>
-</ul>
-<p><img src="../../../media/qownnotes-media-JRjXla-1607225346.png" alt="qownnotes-media-JRjXla"></p>
-<p><strong>调度器最多可以创建 10000 个线程M，但是其中大多数的线程都不会执行用户代码（可能陷入系统调用），最多只会有 GOMAXPROCS 个活跃线程能够正常运行。</strong> 在默认情况下，运行时会将 GOMAXPROCS 设置成当前机器的核数.</p>
-<p>M的结构体中存在两个字段: g0 是持有调度栈的 Goroutine，curg 是在当前线程上运行的用户 Goroutine. g0 是一个运行时中比较特殊的 Goroutine，它会深度参与运行时的调度过程，包括 Goroutine 的创建、大内存分配和 CGO 函数的执行。</p>
-<p>因为调度器在启动时就会创建 GOMAXPROCS 个处理器，所以 Go 语言程序的处理器P数量一定会等于 GOMAXPROCS</p>
-<p>P的状态有:</p>
-<ol>
-<li>_Pidle    处理器没有运行用户代码或者调度器，被空闲队列或者改变其状态的结构持有，运行队列为空</li>
-<li>_Prunning    被线程 M 持有，并且正在执行用户代码或者调度器</li>
-<li>_Psyscall    没有执行用户代码，当前线程陷入系统调用</li>
-<li>_Pgcstop    被线程 M 持有，当前处理器由于垃圾回收被停止</li>
-<li>_Pdead    当前处理器已经不被使用</li>
-</ol>
-<p><em>在调度器初始函数执行的过程中会将 maxmcount 设置成 10000，这也就是一个 Go 语言程序能够创建的最大线程数.</em></p>
-<p>在调度器启动时,会堆allp中处理器数量进行操作保证与期望的数量GOMAXPROCS相等. 之后将除 allp[0] 之外的处理器 P 全部设置成 _Pidle 并加入到全局的空闲队列中；</p>
-<p>在创建G时, runtime.newproc1 会从处理器或者调度器的缓存中获取新的结构体(复用已有的或者创建新的)，也可以调用 runtime.malg 函数创建新的结构体</p>
-<p>新创建的G可能会在全局的运行队列上也可能在处理器P本地的运行队列上. 如果P的runnext指向的G为空, 直接设置该G为P的下一个执行任务, 如果next存在且本地队列还有空间则加入本地队列, 否则加入全局队列</p>
-<p><strong>P的本地的运行队列是一个使用数组构成的环形链表，由p的结构体中runq表示, 它最多可以存储 256 个待执行任务G, 超过数量的G都会被放到全局队列(由调度器持有)中. 进入IO阻塞的G可能被放到全局的队列中, 这就使得同一个G可能在不同的P上执行.</strong> </p>
-<p>Go的调度循环:<br>runtime.schedule 函数的会从不同地方查找待执行的 Goroutine：</p>
-<ol>
-<li>为了保证公平，当全局运行队列中有待执行的 Goroutine 时，通过 schedtick 保证有一定几率会从全局的运行队列中查找对应的 Goroutine；</li>
-<li>从处理器本地的运行队列中查找待执行的 Goroutine；</li>
-<li>如果前两种方法都没有找到 Goroutine，就会通过 runtime.findrunnable 进行阻塞地查找 Goroutine；当前函数一定会返回一个可执行的 Goroutine，如果当前不存在就会阻塞等待。</li>
-</ol>
-<p>findrunnable执行以下过程: </p>
-<ol>
-<li>从本地运行队列、全局运行队列中查找；</li>
-<li>从网络轮询器中查找是否有 Goroutine 等待运行；</li>
-<li>通过 runtime.runqsteal 函数尝试从其他随机的处理器中窃取待运行的 Goroutine，在该过程中还可能窃取处理器中的计时器；</li>
-</ol>
-<p>go的调度器执行逻辑循环:  schedule -&gt; execute -&gt; gogo -&gt; goexit0 -&gt;schedule …</p>
-<p><em>Go 语言的调用惯例: 正常的函数调用都会使用 CALL 指令，该指令会将调用方的返回地址加入栈寄存器 SP 中，然后跳转到目标函数；当目标函数返回后，会从栈中查找调用的地址并跳转回调用方继续执行剩下的代码</em></p>
-<p>触发调度的几个路径：</p>
-<ul>
-<li>主动挂起 — runtime.gopark -&gt; runtime.park_m -&gt;schedule</li>
-<li>系统调用 — runtime.exitsyscall -&gt; runtime.exitsyscall0 -&gt;schedule</li>
-<li>协作式调度 — runtime.Gosched -&gt; runtime.gosched_m -&gt; runtime.goschedImpl -&gt;schedule</li>
-<li>系统监控 — runtime.sysmon -&gt; runtime.retake -&gt; runtime.preemptone -&gt;schedule</li>
-</ul>
-<p>runtime.gopark函数会将当前 Goroutine 暂停，被暂停的任务不会放回运行队列,当 Goroutine 等待的特定条件满足后，运行时会调用 runtime.goready 将因为调用 runtime.gopark 而陷入休眠的 Goroutine 唤醒(设置_Grunnable并加入运行队列等待调度器调度).</p>
-<p>为了处理特殊的系统调用，我们甚至在 Goroutine 中加入了 _Gsyscall 状态</p>
-<p>Go 语言通过 <a href="https://github.com/golang/go/blob/50bd1c4d4eb4fac8ddeb5f063c099daccfb71b26/src/syscall/asm_linux_386.s#L18" target="_blank" rel="noopener">syscall.Syscall</a> 和 <a href="https://github.com/golang/go/blob/50bd1c4d4eb4fac8ddeb5f063c099daccfb71b26/src/syscall/asm_linux_386.s#L69" target="_blank" rel="noopener">syscall.RawSyscall</a> 等使用汇编语言编写的方法封装了操作系统提供的所有系统调用.  RawSyscall用于不需要运行时参与的系统调用, 以提升性能, 只有立刻返回的系统调用才能使用RawSyscall, 如SYS_EPOLL_WAIT（超时时间为 0）、SYS_TIME、SYS_EPOLL_CREATE等</p>
-<p>陷入系统调用时 runtime.reentersyscall 进行的操作: </p>
-<ol>
-<li>禁止线程上发生的抢占，防止出现内存不一致的问题；</li>
-<li>保证当前函数不会触发栈分裂或者增长；</li>
-<li>保存当前的程序计数器 PC 和栈指针 SP 中的内容；</li>
-<li>将 Goroutine 的状态更新至 _Gsyscall；</li>
-<li>将 Goroutine 的处理器和线程暂时分离并更新处理器的状态到 _Psyscall；</li>
-<li>释放当前线程上的锁；</li>
-</ol>
-<p>该方法 runtime.reentersyscall 会使处理器P和线程M的分离，当前线程会陷入系统调用等待返回，当前线程上的锁被释放后，会有其他 Goroutine 抢占处理器资源P.</p>
-<p>系统调用结束以后, 会调用退出系统调用的函数 runtime.exitsyscall 为当前 Goroutine 重新分配资源.<br>如果调用 exitsyscallfast 函数不成功就使用相对较慢的exitsyscall0, 最终调用schedule触发调度.</p>
-<p>exitsyscallfast 中包含两个不同的分支：</p>
-<ol>
-<li>如果 Goroutine 的原处理器处于 _Psyscall 状态，就会直接调用 wirep 将 Goroutine 与处理器进行关联；</li>
-<li>如果调度器中存在闲置的处理器，就会调用 acquirep 函数使用闲置的处理器处理当前 Goroutine；</li>
-</ol>
-<p>exitsyscall0 会将当前 Goroutine 切换至 _Grunnable 状态，并移除线程 M 和当前 Goroutine 的关联：</p>
-<ol>
-<li>当我们通过 pidleget 获取到闲置的处理器时就会在该处理器上执行 Goroutine；</li>
-<li>在其它情况下，我们会将当前 Goroutine 放到全局的运行队列中，等待调度器的调度；</li>
-</ol>
-<p>runtime.Gosched 就是主动让出处理器, 它会将Goroutine 的状态到 _Grunnable，让出当前的处理器并将 Goroutine 重新放回全局队列, 最后触发schedule.</p>
-<p> runtime.LockOSThread 和 runtime.UnlockOSThread 让我们有能力绑定 Goroutine 和线程,<br><strong>Goroutine 应该在调用操作系统服务或者依赖线程状态的非 Go 语言库时调用 runtime.LockOSThread 函数</strong></p>
-<p>在LockOSThread中会设置线程的 lockedg 字段和 Goroutine 的 lockedm 字段，这两行代码会绑定线程和 Goroutine.</p>
-<p><strong>Go 语言程序创建的线程M数可能会多于 GOMAXPROCS . 当线程M处于阻塞状态后，如果其他线程都处于running状态, 这个时候会创建一个新的线程来运行当前处理器P队列中的Gorountine, 触发的时机可能包括 — 垃圾回收、系统监控. Go 语言本身对于程序中运行的线程上限为10000. Go 语言在启动线程时会设置 PTHREAD_CREATE_DETACHED，当线程执行完成后会自动回收和重用。</strong> Go使用pthread_attr_setdetachstate(3THR) 告知系统pthread库不需要Join该线程的结束.</p>
-<p><strong>协程不是银弹, 在调用一些 C 语言的库时，例如 C 图形库，就需要绑定线程，协程在这时可能就不适用了。</strong></p>
-<p>一定存在极端的边界条件让使用 Goroutine 和直接使用线程性能差不多，例如程序中全都是 I/O 操作，不过在实际的服务中很难出现，程序的执行都会同时使用到 CPU 和 I/O 两种资源.</p>
-<ul>
-<li><strong>io 与系统调用不能混淆，一个 io 过程可能包括多次系统调用。</strong></li>
-<li><strong>（经过一个系统调用发现文件描述符还未可用而）阻塞的 io 首先会导致 G 的挂起，此时 G 与 M 分离，且不在任何 P 的运行队列中，当前的 P 会调度下一个 G，这个阶段不涉及新线程的创建。</strong></li>
-<li><strong>被 io 挂起的 G 由网络轮询器维护，直到文件描述符可用。</strong></li>
-<li><strong>网络轮询器既会被（在独立线程中的）系统监控 Goroutine 触发，也会被其他各个活跃线程上的 Goroutine 触发。</strong></li>
-<li><strong>当文件描述符可用时，G 会重新加入到原来的 P 中等待被调度。</strong></li>
-<li><strong>当 G 被重新调度时，会重新发起读/写系统调用。</strong></li>
-<li><strong>当 G 进行系统调用的时候，对应的 M 和 P 也阻塞在系统调用，并不会立刻发生抢占，只有当这个阻塞持续时间过长（10 ms）时，才会将 P（及之上的其他 G）抢占并分配到空闲的 M 上，此时如果没有空闲的，才会创建新的线程。</strong></li>
-</ul>
-<p>线程 M 会持有自己的 g0, 全局也有一个 g0</p>
-<h2 id="网络轮询器"><a href="#网络轮询器" class="headerlink" title="网络轮询器"></a>网络轮询器</h2><p>网络轮询器不仅用于监控网络 I/O，还能用于监控文件的 I/O，它利用了操作系统提供的 I/O 多路复用模型来提升 I/O 设备的利用率以及程序的性能</p>
-<p>操作系统中包含阻塞 I/O、非阻塞 I/O、信号驱动 I/O 与异步 I/O 以及 I/O 多路复用五种 I/O 模型</p>
-<p>I/O 多路复用被用来处理同一个事件循环中的多个 I/O 事件。I/O 多路复用需要使用特定的系统调用，最常见的系统调用就是 select，该函数可以同时监听最多 1024 个文件描述符的可读或者可写状态. 除了标准的 select 函数之外，操作系统中还提供了一个比较相似的 poll 函数，它使用链表存储文件描述符，摆脱了 1024 的数量上限.</p>
-<p>多路复用函数会阻塞的监听一组文件描述符，当文件描述符的状态转变为可读或者可写时，select 会返回可读或者可写事件的个数，应用程序就可以在输入的文件描述符中查找哪些可读或者可写，然后执行相应的操作。select 有比较多的限制：</p>
-<ol>
-<li>监听能力有限 — 最多只能监听 1024 个文件描述符；</li>
-<li>内存拷贝开销大 — 需要维护一个较大的数据结构存储文件描述符，该结构需要拷贝到内核中；</li>
-<li>时间复杂度 O(n) — 返回准备就绪的事件个数后，需要遍历所有的文件描述符；</li>
-</ol>
-<p>Go实现了对不同操作系统上的I/O多路复用操作的多个版本的网络轮询模块, 如epoll、kqueue、evport、solaries.在编译时通过目标平台选择特定的代码分支. </p>
-<p>各系统的网络轮询器接口都实现以下函数:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollinit</span><span class="params">()</span> // 初始化轮询器 通过<span class="title">sync</span>.<span class="title">Once</span>保证只调用一次</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollopen</span><span class="params">(fd <span class="keyword">uintptr</span>, pd *pollDesc)</span> <span class="title">int32</span> //创建事件,加入监听</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpoll</span><span class="params">(delta <span class="keyword">int64</span>)</span> <span class="title">gList</span> // 返回一组准备就绪的<span class="title">G</span>, <span class="title">delta</span>&gt;0则无限期等待文件描述符就绪, ==0则非阻塞轮询网络, &lt;0则阻塞特定时间轮询</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollBreak</span><span class="params">()</span> // 唤醒轮询器</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollIsPollDescriptor</span><span class="params">(fd <span class="keyword">uintptr</span>)</span> <span class="title">bool</span> // 判断文件描述符是否被轮询器使用.</span></span><br></pre></td></tr></table></figure>
-<p>操作系统中 I/O 多路复用函数会监控文件描述符的可读或者可写，而 Go 语言网络轮询器会监听 runtime.pollDesc 结构体的状态，该结构会封装操作系统的文件描述符. runtime.pollDesc 结构体会使用 link 字段串联成一个链表存储在 runtime.pollCache. runtime.pollCache 是运行时包中的全局变量,运行时会在第一次调用 runtime.pollCache.alloc 方法时初始化总大小约为 4KB 的 runtime.pollDesc 结构体，runtime.persistentalloc 会保证这些数据结构初始化在不会触发垃圾回收的内存中，让这些数据结构只能被内部的 epoll 和 kqueue 模块引用.调用 runtime.pollCache.free 方法释放已经用完的 runtime.pollDesc 结构，它会直接将结构体插入链表的最前面.</p>
-<p><em>目前的计时器由网络轮询器管理和触发</em></p>
-<h4 id="进入IO等待"><a href="#进入IO等待" class="headerlink" title="进入IO等待"></a>进入IO等待</h4><p>当我们在文件描述符上执行读写操作时，如果文件描述符不可读或者不可写，当前 Goroutine 就会执行 runtime.poll_runtime_pollWait 检查 runtime.pollDesc 的状态并调用 runtime.netpollblock 等待文件描述符的可读或者可写, netpollblock会使用运行时提供的 runtime.gopark 让出当前线程，将 Goroutine 转换到休眠状态并等待运行时的唤醒.</p>
-<h4 id="轮询等待"><a href="#轮询等待" class="headerlink" title="轮询等待"></a>轮询等待</h4><p>Go 语言的运行时会在调度或者系统监控中调用 runtime.netpoll 轮询网络:</p>
-<ol>
-<li>根据传入的 delay 计算 epoll 系统调用需要等待的时间；delay 的单位是纳秒</li>
-<li>调用 epollwait 等待可读或者可写事件的发生；</li>
-<li>在循环中依次处理 epollevent 事件；将G加入运行队列</li>
-</ol>
-<p><strong>网络轮询器并不是由运行时中的某一个线程独立运行的，运行时中的调度和系统调用会通过 runtime.netpoll 与网络轮询器交换消息,而系统监控则是专用的线程来等待epoll返回，获取待执行的 Goroutine 列表，并将待执行的 Goroutine 加入运行队列等待处理。所有的文件 I/O、网络 I/O 和计时器都是由网络轮询器管理的</strong></p>
-<h2 id="系统监控"><a href="#系统监控" class="headerlink" title="系统监控"></a>系统监控</h2><p>在支持多任务的操作系统中，守护进程（Daemon）是在后台运行的计算机程序。守护进程不会由用户直接操作，它一般会在操作系统启动时自动运行。Kubernetes 的 DaemonSet 和 Go 语言的系统监控都使用类似设计提供一些通用的功能. 在系统监控内部启动了一个不会中止的循环，在循环的内部会轮询网络、抢占长期运行或者处于系统调用的 Goroutine 以及触发垃圾回收.</p>
-<p>当 Go 语言程序启动时，运行时会在第一个 Goroutine 中调用 runtime.main 启动主程序，该函数会在系统栈中创建新的线程.</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">if</span> GOARCH != <span class="string">"wasm"</span> &#123; <span class="comment">// webassembly不创建sysmon</span></span><br><span class="line">		systemstack(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			newm(sysmon, <span class="literal">nil</span>)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>运行时执行系统监控不需要处理器P，通过系统调用 clone 创建一个新的线程, 系统监控的 Goroutine 会直接在创建的线程M上运行, </p>
-<p>系统监控在每次循环开始时都会通过 usleep 挂起当前线程，该函数的参数是微秒，运行时会遵循以下的规则决定休眠时间：</p>
-<ol>
-<li>初始的休眠时间是 20μs；</li>
-<li>最长的休眠时间是 10ms；</li>
-<li>当系统监控在 50 个循环中都没有唤醒 Goroutine 时，休眠时间在每个循环都会倍增；</li>
-</ol>
-<p>当程序趋于稳定之后，系统监控的触发时间就会稳定在 10ms。会在循环中完成以下的工作：</p>
-<ul>
-<li>检查死锁 </li>
-<li>运行计时器 — 获取下一个需要被触发的计时器；</li>
-<li>轮询网络 — 获取需要处理的到期文件描述符；</li>
-<li>抢占处理器 — 抢占运行时间较长的或者处于系统调用的 Goroutine；</li>
-<li>垃圾回收 — 在满足条件时触发垃圾收集回收内存；</li>
-</ul>
-<p>检查死锁逻辑: </p>
-<ol>
-<li>收集数据: 存在的M(根据下一个线程id和释放线程数计算)和G数量,空闲的M数量,锁定的M数量,进入系统调用的M数量, P上计时器是否存在. 得到正在运行的M数量</li>
-<li>若正在运行的M数量&gt;0则无死锁, 若&lt;0则状态不一致, 若==0则进行进一步判断</li>
-<li>若存在 Goroutine 处于 _Grunnable、_Grunning 和 _Gsyscall 状态时，意味着程序发生了死锁；</li>
-<li>当所有的 Goroutine 都处于 _Gidle、_Gdead 和 _Gcopystack 状态时，意味着主程序调用了 runtime.goexit；</li>
-<li>当存在等待的 Goroutine 并且不存在正在运行的 Goroutine, 若处理器中存在等待的计时器，那么所有的 Goroutine 陷入休眠状态是合理的，不过如果不存在等待的计时器，运行时就会直接报错并退出程序</li>
-</ol>
-<p>当前调度器需要执行垃圾回收或者所有处理器都处于闲置状态时，如果没有需要触发的计时器，那么系统监控可以暂时陷入休眠.休眠的时间会依据强制 GC 的周期 forcegcperiod 和计时器下次触发的时间确定，runtime.notesleep 会使用信号量同步系统监控即将进入休眠的状态。当系统监控被唤醒之后，我们会重新计算当前时间和下一个计时器需要触发的时间、调用 runtime.noteclear 通知系统监控被唤醒并重置休眠的间隔。如果在这之后，我们发现下一个计时器需要触发的时间小于当前时间，这也就说明所有的线程可能正在忙于运行 Goroutine，系统监控会启动新的线程来触发计时器，避免计时器的到期时间有较大的偏差.</p>
-<p>如果上一次轮询网络已经过去了 10ms，那么系统监控还会在循环中轮询网络，检查是否有待执行的文件描述符</p>
-<p>系统调用会在循环中调用 runtime.retake 函数抢占处于运行或者系统调用中的处理器，该函数会遍历运行时的全部处理器. 每个处理器都存储了一个 runtime.sysmontick 结构体:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> sysmontick <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="comment">// 分别存储了处理器的调度次数、处理器上次调度时间、系统调用的次数以及系统调用的时间</span></span><br><span class="line">	schedtick   <span class="keyword">uint32</span></span><br><span class="line">	schedwhen   <span class="keyword">int64</span></span><br><span class="line">	syscalltick <span class="keyword">uint32</span></span><br><span class="line">	syscallwhen <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>runtime.retake 中的循环包含了两种不同的抢占逻辑:</p>
-<ol>
-<li><strong>当处理器处于 _Prunning 或者 _Psyscall 状态时，如果上一次触发调度的时间已经过去了 10ms，会通过 runtime.preemptone 通知当前G去停止执行,让出P给其他G；</strong></li>
-<li><strong>当处理器处于 _Psyscall(系统调用) 状态时，在满足以下情况下会调用 runtime.handoffp 让出处理器的使用权：处理器的运行队列不为空或者不存在空闲处理器时且系统调用时间超过了 10ms 时；</strong></li>
-</ol>
-<p>如果需要触发垃圾回收，sysmon会将用于垃圾回收的 Goroutine 加入全局队列，让调度器选择合适的处理器去执行.</p>
-<h2 id="内存分配器"><a href="#内存分配器" class="headerlink" title="内存分配器"></a>内存分配器</h2><p>编程语言的内存分配器一般包含两种分配方法，一种是线性分配器（Sequential Allocator，Bump Allocator），另一种是空闲链表分配器（Free-List Allocator）</p>
-<ol>
-<li>当我们在编程语言中使用线性分配器，我们只需要在内存中维护一个指向内存特定位置的指针，当用户程序申请内存时，分配器只需要检查剩余的空闲内存、返回分配的内存区域并修改指针在内存中的位置. 有较快的执行速度，以及较低的实现复杂度；但是线性分配器无法在内存被释放时重用内存.线性分配器的使用需要配合具有拷贝特性的垃圾回收算法，所以 C 和 C++ 等需要直接对外暴露指针的语言就无法使用该策略</li>
-<li>空闲链表分配器（Free-List Allocator）可以重用已经被释放的内存，它在内部会维护一个类似链表的数据结构。当用户程序申请内存时，空闲链表分配器会依次遍历空闲的内存块，找到足够大的内存，然后申请新的资源并修改链表. 时间复杂度就是 O(n). 选择策略有: </li>
-</ol>
-<ul>
-<li>首次适应（First-Fit）— 从链表头开始遍历，选择第一个大小大于申请内存的内存块；</li>
-<li>循环首次适应（Next-Fit）— 从上次遍历的结束位置开始遍历，选择第一个大小大于申请内存的内存块；</li>
-<li>最优适应（Best-Fit）— 从链表头遍历整个链表，选择最合适的内存块；</li>
-<li>隔离适应（Segregated-Fit）— 将内存分割成多个链表，每个链表中的内存块大小相同，申请内存时先找到满足条件的链表，再从链表中选择合适的内存块；</li>
-</ul>
-<p>Go的分配策略类似隔离适应,将内存分割成由 4、8、16、32 字节的内存块组成的链表, 根据申请大小找到对应的链表查找空闲内存. </p>
-<p>线程缓存分配（Thread-Caching Malloc，TCMalloc）是用于分配内存的的机制，它比 glibc 中的 malloc 函数还要快很多2。Go 语言的内存分配器就借鉴了 TCMalloc 的设计实现高速的内存分配，它的核心理念是使用多级缓存根据将对象根据大小分类，并按照类别实施不同的分配策略。</p>
-<p>Go 语言的内存分配器会根据申请分配的内存大小选择不同的处理逻辑，<em>运行时根据对象的大小将对象分成微对象、小对象和大对象三种</em>：</p>
-<ol>
-<li>微对象    (0, 16B)</li>
-<li>小对象    [16B, 32KB]</li>
-<li>大对象    (32KB, +∞)</li>
-</ol>
-<p><strong>程序中的绝大多数对象的大小都在 32KB 以下</strong></p>
-<p>内存分配器不仅会区别对待大小不同的对象，还会将内存分成不同的级别分别管理，TCMalloc 和 Go 运行时分配器都会引入线程缓存（Thread Cache）、中心缓存（Central Cache）和页堆（Page Heap）三个组件分级管理内存.</p>
-<p><strong>线程缓存属于每一个独立的线程，它能够满足线程上绝大多数的内存分配需求，因为不涉及多线程，所以也不需要使用互斥锁来保护内存，这能够减少锁竞争带来的性能损耗。当线程缓存不能满足需求时，就会使用中心缓存作为补充解决小对象的内存分配问题；在遇到 32KB 以上的对象时，内存分配器就会选择页堆直接分配大量的内存。</strong></p>
-<p>Go 语言程序的 1.10 版本在启动时会初始化整片虚拟内存区域，<strong>三个区域 spans、bitmap 和 arena 分别预留了 512MB、16GB 以及 512GB 的虚拟内存空间</strong></p>
-<ul>
-<li>spans 区域存储了指向内存管理单元 runtime.mspan 的指针，每个内存单元会管理几页的内存空间，每页大小为 8KB；</li>
-<li>bitmap 用于标识 arena 区域中的那些地址保存了对象，位图中的每个字节都会表示堆区中的 32 字节是否包含空闲；</li>
-<li>arena 区域是真正的堆区，运行时会将 8KB 看做一页，这些内存页中存储了所有在堆上初始化的对象；</li>
-</ul>
-<p>对于任意一个地址，我们都可以根据 arena 的基地址计算该地址所在的页数并通过 spans 数组获得管理该片内存的管理单元 runtime.mspan，spans 数组中多个连续的位置可能对应同一个 runtime.mspan。</p>
-<p>Go 语言在垃圾回收时会根据指针的地址判断对象是否在堆中，并通过上一段中介绍的过程找到管理该对象的 runtime.mspan。这些都建立在堆区的内存是连续的这一假设上。这种设计虽然简单并且方便，但是在 C 和 Go 混合使用时会导致程序崩溃:</p>
-<ol>
-<li>分配的内存地址会发生冲突，导致堆的初始化和扩容失败；</li>
-<li>没有被预留的大块内存可能会被分配给 C 语言的二进制，导致扩容后的堆不连续；</li>
-</ol>
-<p><strong>稀疏内存是 Go 语言在 1.11 中提出的方案，使用稀疏的内存布局不仅能移除堆大小的上限，还能解决 C 和 Go 混合使用时的地址空间冲突问题。</strong> 不过因为基于稀疏内存的内存管理失去了内存的连续性这一假设，这也使内存管理变得更加复杂.</p>
-<p>运行时使用二维的 runtime.heapArena 数组管理所有的内存，每个单元都会管理 64MB 的内存空间.不同平台和架构的二维数组大小可能完全不同，如果我们的 Go 语言服务在 Linux 的 x86-64 架构上运行，二维数组的一维大小会是 1，而二维大小是 4,194,304，因为每一个指针占用 8 字节的内存空间，所以元信息的总大小为 32MB。由于每个 runtime.heapArena 都会管理 64MB 的内存，<em>整个堆区最多可以管理 256TB 的内存</em>，这比之前的 512GB 多好几个数量级。代价是大约会增加 1% 的垃圾回收开销</p>
-<p>因为所有的内存最终都是要从操作系统中申请的，所以 Go 语言的运行时构建了操作系统的内存管理抽象层，该抽象层将运行时管理的地址空间分成以下的四种状态:</p>
-<ol>
-<li>None    内存没有被保留或者映射，是地址空间的默认状态</li>
-<li>Reserved    运行时持有该地址空间，但是访问该内存会导致错误</li>
-<li>Prepared    内存被保留，一般没有对应的物理内存访问该片内存的行为是未定义的可以快速转换到 Ready 状态</li>
-<li>Ready    可以被安全访问</li>
-</ol>
-<p><img src="../../../media/qownnotes-media-AxKSRs-232961597.png" alt="qownnotes-media-AxKSRs"></p>
-<ul>
-<li>runtime.sysAlloc 会从操作系统中获取一大块可用的内存空间，可能为几百 KB 或者几 MB；</li>
-<li>runtime.sysFree 会在程序发生内存不足（Out-of Memory，OOM）时调用并无条件地返回内存；</li>
-<li>runtime.sysReserve 会保留操作系统中的一片内存区域，对这片内存的访问会触发异常；</li>
-<li>runtime.sysMap 保证内存区域可以快速转换至准备就绪；</li>
-<li>runtime.sysUsed 通知操作系统应用程序需要使用该内存区域，需要保证内存区域可以安全访问；</li>
-<li>runtime.sysUnused 通知操作系统虚拟内存对应的物理内存已经不再需要了，它可以重用物理内存；</li>
-<li>runtime.sysFault 将内存区域转换成保留状态，主要用于运行时的调试；</li>
-</ul>
-<p><img src="../../../media/qownnotes-media-LZFCTM-1064873095.png" alt="qownnotes-media-LZFCTM"></p>
-<p>所有的 Go 语言程序都会在启动时初始化如上图所示的内存布局，每一个处理器都会被分配一个线程缓存 runtime.mcache 用于处理微对象和小对象的分配，它们会持有内存管理单元 runtime.mspan。</p>
-<p>每个类型的内存管理单元都会管理特定大小的对象，当内存管理单元中不存在空闲对象时，它们会从 runtime.mheap 持有的 134 个中心缓存 runtime.mcentral 中获取新的内存单元，中心缓存属于全局的堆结构体 runtime.mheap，它会从操作系统中申请内存。</p>
-<p>在 amd64 的 Linux 操作系统上，runtime.mheap 会持有 4,194,304 runtime.heapArena，每一个 runtime.heapArena 都会管理 64MB 的内存，<strong>单个 Go 语言程序的内存上限也就是 256TB</strong>。</p>
-<p>runtime.mspan 是 Go 语言内存管理的基本单元,串联后形成双向链表. 每个 runtime.mspan 都管理 npages 个大小为 8KB 的页，这里的页不是操作系统中的内存页，它们是操作系统内存页的整数倍</p>
-<p>运行时会使用 runtime.mSpanStateBox 结构体存储内存管理单元的状态 runtime.mSpanState:<br>该状态可能处于 mSpanDead、mSpanInUse、mSpanManual 和 mSpanFree 四种情况。当 runtime.mspan 在空闲堆中，它会处于 mSpanFree 状态；当 runtime.mspan 已经被分配时，它会处于 mSpanInUse、mSpanManual 状态，这些状态会在遵循以下规则发生转换：</p>
-<ul>
-<li>在垃圾回收的任意阶段，可能从 mSpanFree 转换到 mSpanInUse 和 mSpanManual；</li>
-<li>在垃圾回收的清除阶段，可能从 mSpanInUse 和 mSpanManual 转换到 mSpanFree；</li>
-<li>在垃圾回收的标记阶段，不能从 mSpanInUse 和 mSpanManual 转换到 mSpanFree；</li>
-</ul>
-<p>设置 runtime.mspan 结构体状态的读写操作必须是原子性的避免垃圾回收造成的线程竞争问题。</p>
-<p><strong>Go 语言的内存管理模块中一共包含 67 种跨度类, 每个类决定了内存管理单元中存储的对象大小和个数.</strong><br>运行时中还包含 ID 为 0 的特殊跨度类，它能够管理大于 32KB 的特殊对象</p>
-<p>runtime.mcache 是 Go 语言中的线程缓存，它会与线程上的处理器一一绑定，主要用来缓存用户程序申请的微小对象。<strong>每一个线程缓存都持有 67 * 2 个 runtime.mspan</strong>，这些内存管理单元都存储在结构体的 alloc 字段中</p>
-<p>访问中心缓存中的内存管理单元需要使用互斥锁</p>
-<p><strong>微对象 (0, 16B) — 先使用微型分配器，再依次尝试线程缓存、中心缓存和堆分配内存；</strong><br><strong>小对象 [16B, 32KB] — 依次尝试使用线程缓存、中心缓存和堆分配内存；</strong><br><strong>大对象 (32KB, +∞) — 直接在堆上分配内存；</strong></p>
-<p><strong>微分配器可以将多个较小的内存分配请求合入同一个内存块中，只有当内存块中的所有对象都需要被回收时，整片内存才可能被回收</strong><br><strong>微分配器管理的对象不可以是指针类型，</strong></p>
-<h2 id="垃圾回收器"><a href="#垃圾回收器" class="headerlink" title="垃圾回收器"></a>垃圾回收器</h2><p>三色标记:</p>
-<ul>
-<li>白色对象 — 潜在的垃圾，其内存可能会被垃圾收集器回收；</li>
-<li>黑色对象 — 活跃的对象，包括不存在任何引用外部指针的对象以及从根对象可达的对象；</li>
-<li>灰色对象 — 活跃的对象，因为存在指向白色对象的外部指针，垃圾收集器会扫描这些对象的子对象；</li>
-</ul>
-<p>根是灰色, 从灰色对象的集合中选择一个灰色对象并将其标记成黑色；<br>将黑色对象指向的所有对象都标记成灰色，保证该对象和被该对象引用的对象都不会被回收；<br>重复上述两个步骤直到对象图中不存在灰色对象；之后垃圾收集器可以回收这些白色的垃圾.</p>
-<p>想要在并发或者增量的标记算法中保证正确性，我们需要达成以下两种三色不变性（Tri-color invariant）中的任意一种：</p>
-<ul>
-<li>强三色不变性 — <strong>黑色对象不会指向白色对象，只会指向灰色对象或者黑色对象；</strong></li>
-<li>弱三色不变性 — <strong>黑色对象指向的白色对象必须包含一条从灰色对象经由多个白色对象的可达路径；</strong></li>
-</ul>
-<p>Go 语言中使用的两种写屏障技术，分别是 Dijkstra 提出的插入写屏障(保证强三色不变性,有存活可能的对象都标记成灰色)和 Yuasa 提出的删除写屏障</p>
-<p><strong>Go 语言运行时的默认配置会在堆内存达到上一次垃圾收集的 2 倍时，触发新一轮的垃圾收集，这个行为可以通过环境变量 GOGC 调整，在默认情况下它的值为 100，即增长 100% 的堆内存才会触发 GC</strong></p>
-<p>因为并发垃圾收集器会与程序一起运行，所以它无法准确的控制堆内存的大小，并发收集器需要在达到目标前触发垃圾收集，这样才能够保证内存大小的可控. 垃圾收集调步算法是跟随 v1.5 一同引入的，该算法的目标是优化堆的增长速度和垃圾收集器的 CPU 利用率，而在 v1.10 版本中又对该算法进行了优化，将原有的目的堆大小拆分成了软硬两个目标</p>
-<p>垃圾收集的根对象一般包括全局变量和栈对象. </p>
-<p>Go 语言在 v1.8 组合 Dijkstra 插入写屏障和 Yuasa 删除写屏障构成了如下所示的混合写屏障，该写屏障会将被覆盖的对象标记成灰色并在当前栈没有扫描时将新对象也标记成灰色, 在垃圾收集的标记阶段，我们还需要将创建的所有新对象都标记成黑色，防止新分配的栈内存和堆内存中的对象被错误地回收</p>
-<p>GO使用使用三色抽象、并发增量回收、混合写屏障、调步算法以及用户程序协助等机制将垃圾收集的暂停时间优化至毫秒级以下</p>
-<p>垃圾收集的多个阶段过程:</p>
-<ol>
-<li>清理终止阶段；<ol>
-<li>暂停程序，所有的处理器在这时会进入安全点（Safe point）；</li>
-<li>如果当前垃圾收集循环是强制触发的，我们还需要处理还未被清理的内存管理单元；</li>
-</ol>
-</li>
-<li>标记阶段；<ol>
-<li>将状态切换至 _GCmark、开启写屏障、用户程序协助（Mutator Assiste）并将根对象入队；</li>
-<li>恢复执行程序，标记进程和用于协助的用户程序会开始并发标记内存中的对象，写屏障会将被覆盖的指针和新指针都标记成灰色，而所有新创建的对象(栈+堆)都会被直接标记成黑色；</li>
-<li>开始扫描根对象，包括所有 Goroutine 的栈、全局对象以及不在堆中的运行时数据结构，扫描 Goroutine 栈期间会暂停当前处理器；</li>
-<li>依次处理灰色队列中的对象，将对象标记成黑色并将它们指向的对象标记成灰色；</li>
-<li>使用分布式的终止算法检查剩余的工作，发现标记阶段完成后进入标记终止阶段；</li>
-</ol>
-</li>
-<li>标记终止阶段；<ol>
-<li>暂停程序、将状态切换至 _GCmarktermination 并关闭辅助标记的用户程序；</li>
-<li>清理处理器上的线程缓存;</li>
-</ol>
-</li>
-<li>清理阶段；<ol>
-<li>将状态切换至 _GCoff 开始清理阶段，初始化清理状态并关闭写屏障；</li>
-<li>恢复用户程序，所有新创建的对象会标记成白色；</li>
-<li>后台并发清理所有的内存管理单元，当 Goroutine 申请新的内存管理单元时就会触发清理(惰性清除)；</li>
-</ol>
-</li>
-</ol>
-<h2 id="栈内存管理"><a href="#栈内存管理" class="headerlink" title="栈内存管理"></a>栈内存管理</h2><p>栈寄存器在是 CPU 寄存器中的一种，它的主要作用是跟踪函数的调用栈，Go 语言的汇编代码中包含 BP 和 SP 两个栈寄存器，它们分别存储了栈的基址指针和栈顶的地址. BP 和 SP 之间的内存就是当前函数的调用栈.(栈向下增长, 栈区内存都是从高地址向低地址扩展的). 申请或者释放栈内存时只需要修改 SP 寄存器的值.</p>
-<p>不同cpu架构的线程默认栈大小不同, <strong>linux x86_64是2MB</strong>, RLIMIT_STACK的系统参数可以修改线程栈大小.</p>
-<p><em>线程和进程都是代码执行的上下文（Context of Execution）.</em></p>
-<p>在 C 语言中，栈上的变量被函数作为返回值返回给调用方是一个常见的错误. 即需要分配到堆上的对象分配到了栈上 , 导致了悬挂指针. </p>
-<p>在编译器优化中，逃逸分析（Escape analysis）是用来决定指针动态作用域的方法。Go 语言的编译器使用逃逸分析决定哪些变量应该在栈上分配，哪些变量应该在堆上分配，其中包括使用 new、make 和字面量等方法隐式分配的内存，Go 语言的逃逸分析遵循以下两个不变性：</p>
-<ol>
-<li><strong>指向栈对象的指针不能存在于堆中；</strong></li>
-<li><strong>指向栈对象的指针不能在栈对象回收后存活；</strong></li>
-</ol>
-<p>通过以下几个步骤实现静态分析的全过程：</p>
-<ol>
-<li>构建带权重的有向图，其中顶点 cmd/compile/internal/gc.EscLocation 表示被分配的变量，边 cmd/compile/internal/gc.EscEdge 表示变量之间的分配关系，权重表示寻址和取地址的次数；</li>
-<li>遍历对象分配图并查找违反两条不变性的变量分配关系，如果堆上的变量指向了栈上的变量，那么栈上的变量就需要分配在堆上；</li>
-<li>记录从函数的调用参数到堆以及返回值的数据流，增强函数参数的逃逸分析；</li>
-</ol>
-<p>为了保证内存的绝对安全，编译器可能会将一些变量错误地分配到堆上，但是因为这些对也会被垃圾收集器处理，所以不会造成内存泄露以及悬挂指针等安全问题</p>
-<p><em>GO在1.3实现连续栈以后在1.4中将初始栈大小降为 2KB.</em></p>
-<p>分段栈机制虽然能够按需为当前 Goroutine 分配内存并且及时减少内存的占用，但是它也存在两个比较大的问题：</p>
-<ol>
-<li>如果当前 Goroutine 的栈几乎充满，那么任意的函数调用都会触发栈的扩容，当函数返回后又会触发栈的收缩，如果在一个循环中调用函数，栈的分配和释放就会造成巨大的额外开销，这被称为热分裂问题（Hot split）；</li>
-<li>一旦 Goroutine 使用的内存越过了分段栈的扩缩容阈值，运行时就会触发栈的扩容和缩容，带来额外的工作量；</li>
-</ol>
-<p>连续栈可以解决分段栈中存在的两个问题，其核心原理就是每当程序的栈空间不足时，初始化一片更大的栈空间并将原栈中的所有值都迁移到新的栈中，新的局部变量或者函数调用就有了充足的内存空间。使用连续栈机制时，栈空间不足导致的扩容会经历以下几个步骤：</p>
-<ol>
-<li>内存空间中分配更大的栈内存空间；</li>
-<li>将旧栈中的所有内容复制到新的栈中；</li>
-<li>将指向旧栈对应变量的指针重新指向新栈； 由于指向栈对象的指针不能存在于堆中，所以指向栈中变量的指针只能在栈上，只需要调整栈中的所有变量就可以保证内存的安全</li>
-<li>销毁并回收旧栈的内存空间；</li>
-</ol>
-<p>因为需要拷贝变量和调整指针，连续栈增加了栈扩容时的额外开销，通过<em>在 GC 期间如果 Goroutine 使用了栈内存的四分之一，那就将其内存减少一半，这样在栈内存几乎充满时也只会扩容一次，不会因为函数调用频繁扩缩容.</em> 这一机制来减少扩/缩容的次数.</p>
-<p><strong>我们可以认为 Go 语言的Goroutine栈内存都是分配在线程堆上的</strong></p>
-<p>从调度器和内存分配的经验来看，如果运行时只使用全局变量来分配内存的话，势必会造成线程之间的锁竞争进而影响程序的执行效率，栈内存由于与线程关系比较密切，所以我们在每一个线程缓存 runtime.mcache 中都加入了栈缓存减少锁竞争影响。</p>
-<p>运行时使用全局的 runtime.stackpool 和线程缓存中的空闲链表分配 32KB 以下的栈内存，使用全局的 runtime.stackLarge 和堆内存分配 32KB 以上的栈内存，提高本地分配栈内存的性能。</p>
-<p>G的栈分配:</p>
-<ol>
-<li>如果栈空间较小，使用全局栈缓存或者线程缓存上固定大小的空闲链表分配内存；</li>
-<li>如果栈空间较大，从全局的大栈缓存 runtime.stackLarge 中获取内存空间；</li>
-<li>如果栈空间较大并且 runtime.stackLarge 空间不足，在堆上申请一片大小足够内存空间；</li>
-</ol>
-<p>编译器会在 cmd/internal/obj/x86.stacksplit 函数中为函数调用插入 runtime.morestack 运行时检查，它会在几乎所有的函数调用之前检查当前 Goroutine 的栈内存是否充足，如果当前栈需要扩容，我们会保存一些栈的相关信息并调用 runtime.newstack 检查是否需要被抢占调度并创建新的栈</p>
-<p><strong>如果要触发栈的缩容，新栈的大小会是原始栈的一半，不过如果新栈的大小低于程序的最低限制 2KB，那么缩容的过程就会停止。运行时只会在栈内存使用不足 1/4 时进行缩容</strong> – 减少频繁缩栈</p>
-<h2 id="插件系统"><a href="#插件系统" class="headerlink" title="插件系统"></a>插件系统</h2><p>Linux 中的共享对象会使用 ELF 格式并提供了一组操作动态链接器的接口:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">dlopen</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *filename, <span class="keyword">int</span> flag)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">char</span> *<span class="title">dlerror</span><span class="params">(<span class="keyword">void</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">dlsym</span><span class="params">(<span class="keyword">void</span> *handle, <span class="keyword">const</span> <span class="keyword">char</span> *symbol)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">dlclose</span><span class="params">(<span class="keyword">void</span> *handle)</span></span>;</span><br><span class="line"><span class="comment">// dlopen函数会根据传入的文件名加载对应的动态库并返回一个句柄（Handle）；我们可以直接使用 dlsym 函数在该句柄中搜索特定的符号，也就是函数或者变量，它会返回该符号被加载到内存中的地址。因为待查找的符号可能不存在于目标动态库中，所以在每次查找后我们都应该调用 dlerror 查看当前查找的结果</span></span><br></pre></td></tr></table></figure>
-
-<p>插件是一个带有公开函数和变量的 main 包，我们需要使用如下所示的命令编译插件：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go build -buildmode=plugin ...</span><br></pre></td></tr></table></figure>
-<p>该命令会生成一个共享对象 .so 文件. 当该文件被加载到 Go 语言程序时会使用下面的结构体 plugin.Plugin 表示，该结构体中包含文件的路径以及包含的符号等信息:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Plugin <span class="keyword">struct</span> &#123;</span><br><span class="line">	pluginpath <span class="keyword">string</span></span><br><span class="line">	syms       <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>plugin包中使用的两个 C 语言函数 pluginOpen 和 pluginLookup；pluginOpen 只是简单包装了一下C标准库中的 dlopen 和 dlerror 函数并在加载成功后返回指向动态库的句柄. 这让它们的函数签名看起来更像是 Go 语言中的函数签名，方便在 Go 语言中调用.</p>
-<p>Open操作会执行以下步骤:</p>
-<ol>
-<li>准备 C 语言函数 pluginOpen 的参数；</li>
-<li>通过 cgo 调用 C 语言函数 pluginOpen 并初始化加载的模块；</li>
-<li>查找加载模块中的 init 函数并调用该函数；</li>
-<li>通过插件的文件名和符号列表构建 plugin.Plugin 结构体并返回；</li>
-</ol>
-<p>Lookup方法在Open的返回中查找符号Symbol,其是interface{}的别名,可以将其转换为变量或函数.</p>
-<p><em>使用plugin时，plugin经常要和主程序同时（更确切的说是同一环境下）build才行。如果主程序有改动或者build的路径更换，plugin不同时更新的话，加载plugin时就会报某个package版本错误的问题，导致加载失败。</em></p>
-<p><em>工程上的很多决定就是以 Benchmark 为导向的，设定一个测试用例，然后尽可能地提高效率，当然用例到最后也只是一个参考, 所以测试用例的覆盖和模拟准确度很重要.</em> </p>
-<h2 id="代码生成"><a href="#代码生成" class="headerlink" title="代码生成"></a>代码生成</h2><p>图灵完备的一个重要特性是计算机程序可以生成另一个程序. <em>Go 语言中的测试就使用了代码生成机制，go test 命令会扫描包中的测试用例并生成程序、编译并执行它们</em></p>
-<p>元编程(Metaprogramming)是一种编程技术，在这种技术中，计算机程序能够将程序视为它们的数据。元编程其实是一种使用代码生成代码的方式，无论是编译期间生成代码，还是在运行时改变代码的行为都是其一种.</p>
-<p>Go 语言的代码生成机制会读取包含预编译指令的注释，然后执行注释中的命令读取包中的文件，它们将文件解析成抽象语法树并根据语法树生成新的 Go 语言代码和文件，生成的代码会在项目的编译期间与其他代码一起编译和运行。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//go:generate command argument...</span></span><br></pre></td></tr></table></figure>
-<p><strong>go generate 不会被 go build 等命令自动执行</strong>，该命令需要显式的触发，手动执行该命令时会在文件中扫描上述形式的注释并执行后面的执行命令，需要注意的是 go:generate 和前面的 // 之间没有空格，这种不包含空格的注释一般是 Go 语言的编译器指令，而我们<strong>在代码中的正常注释都应该保留这个空格</strong></p>
-<p>官方案例:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pill.go</span></span><br><span class="line"><span class="keyword">package</span> painkiller</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:generate stringer -type=Pill</span></span><br><span class="line"><span class="keyword">type</span> Pill <span class="keyword">int</span></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	Placebo Pill = <span class="literal">iota</span></span><br><span class="line">	Aspirin</span><br><span class="line">	Ibuprofen</span><br><span class="line">	Paracetamol</span><br><span class="line">	Acetaminophen = Paracetamol</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-<p>调用 <code>go generate</code> 命令后生成<code>pill_string.go</code>文件:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Code generated by "stringer -type=Pill"; DO NOT EDIT.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">package</span> painkiller</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">"strconv"</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> _<span class="params">()</span></span> &#123; <span class="comment">// 生成一个签名为 _ 的函数，通过编译器保证枚举类型的值不会改变</span></span><br><span class="line">	<span class="comment">// An "invalid array index" compiler error signifies that the constant values have changed.</span></span><br><span class="line">	<span class="comment">// Re-run the stringer command to generate them again.</span></span><br><span class="line">	<span class="keyword">var</span> x [<span class="number">1</span>]<span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">	_ = x[Placebo<span class="number">-0</span>]</span><br><span class="line">	_ = x[Aspirin<span class="number">-1</span>]</span><br><span class="line">	_ = x[Ibuprofen<span class="number">-2</span>]</span><br><span class="line">	_ = x[Paracetamol<span class="number">-3</span>]</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 这里重点学习这种节省空间的定义方法,通过同一个底层字符串来优化数据获取效率.</span></span><br><span class="line"><span class="keyword">const</span> _Pill_name = <span class="string">"PlaceboAspirinIbuprofenParacetamol"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> _Pill_index = [...]<span class="keyword">uint8</span>&#123;<span class="number">0</span>, <span class="number">7</span>, <span class="number">14</span>, <span class="number">23</span>, <span class="number">34</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(i Pill)</span> <span class="title">String</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> i &lt; <span class="number">0</span> || i &gt;= Pill(<span class="built_in">len</span>(_Pill_index)<span class="number">-1</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="string">"Pill("</span> + strconv.FormatInt(<span class="keyword">int64</span>(i), <span class="number">10</span>) + <span class="string">")"</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> _Pill_name[_Pill_index[i]:_Pill_index[i+<span class="number">1</span>]]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>对比另一个实现,可见其主要是使用了查表法的思想.</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p Pill)</span> <span class="title">String</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    <span class="keyword">switch</span> p &#123;</span><br><span class="line">    <span class="keyword">case</span> Placebo:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"Placebo"</span></span><br><span class="line">    <span class="keyword">case</span> Aspirin:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"Aspirin"</span></span><br><span class="line">    <span class="keyword">case</span> Ibuprofen:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"Ibuprofen"</span></span><br><span class="line">    <span class="keyword">case</span> Paracetamol: <span class="comment">// == Acetaminophen</span></span><br><span class="line">        <span class="keyword">return</span> <span class="string">"Paracetamol"</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> fmt.Sprintf(<span class="string">"Pill(%d)"</span>, p)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可参考<a href="https://blog.golang.org/generate" target="_blank" rel="noopener">blog</a>  stringer的<a href="https://github.com/golang/tools/blob/d1954cc86c824f62dd7845fadb8b09b089425026/cmd/stringer/stringer.go" target="_blank" rel="noopener">代码实现</a></p>
-<h2 id="JSON标准库"><a href="#JSON标准库" class="headerlink" title="JSON标准库"></a>JSON标准库</h2><p>Go 语言 JSON 标准库编码和解码的过程大量地运用了反射这一特性. </p>
-<p>Go 语言的字段一般都是驼峰命名法，JSON 中下划线的命名方式相对比较常见. 使用标签这一特性直接建立键与字段之间的映射关系.</p>
-<p>常见的两个标签是 string 和 omitempty，前者表示当前的整数或者浮点数是由 JSON 中的字符串表示的，而另一个字段 omitempty 会在字段为零值时，直接在生成的 JSON 中忽略对应的键值对.</p>
-<p>编/解码中会依次递归的尝试判断数据的类型种类,并在成功时返回,即一个个试看到底是哪种数据.</p>
-<p>无论是序列化还是反序列化，都会遵循自顶向下的编码和解码过程，使用递归的方式处理 JSON 对象</p>
-<p><strong>JSON 的标准里其实只有 number 类型，float64 是 Go 做的统一转换，如果想转回 int 类型需要用 struct 给标准库一个提示用于反序列化</strong></p>
-<h2 id="HTTP标准库"><a href="#HTTP标准库" class="headerlink" title="HTTP标准库"></a>HTTP标准库</h2><p>HTTP/3 在 UDP 协议上实现了新的传输层协议 QUIC 并使用 QUIC 传输数据，这也意味着 HTTP 既可以跑在 TCP 上，也可以跑在 UDP 上</p>
-<p>作为文本传输协议，HTTP 协议的协议头都是文本数据，HTTP 请求头的首行会包含请求的方法、路径和协议版本，接下来是多个 HTTP 协议头以及携带的负载:</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/</span> HTTP/1.1</span><br><span class="line"><span class="attribute">User-Agent</span>: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)</span><br><span class="line"><span class="attribute">Host</span>: draveness.me</span><br><span class="line"><span class="attribute">Accept-Language</span>: en-us</span><br><span class="line"><span class="attribute">Accept-Encoding</span>: gzip, deflate</span><br><span class="line"><span class="attribute">Content-Length</span>: &lt;length&gt;</span><br><span class="line"><span class="attribute">Connection</span>: Keep-Alive</span><br><span class="line"></span><br><span class="line">&lt;html&gt;</span><br><span class="line">    ...</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
-
-<p>TCP 协议是面向连接的、可靠的、基于字节流的传输层通信协议，应用层交给 TCP 协议的数据并不会以消息为单位向目的主机传输，这些数据在某些情况下会被组合成一个数据段发送给目标的主机。因为 TCP 协议是基于字节流的，所以基于 TCP 协议的应用层协议都需要自己划分消息的边界.在应用层协议中，最常见的两种解决方案就是基于长度或者基于终结符（Delimiter）。HTTP 协议其实同时实现了上述两种方案，在多数情况下 HTTP 协议都会在协议头中加入 Content-Length 表示负载的长度，消息的接收者解析到该协议头之后就可以确定当前 HTTP 请求/响应结束的位置，分离不同的 HTTP 消息. 当 HTTP 使用块传输（Chunked Transfer）机制时，HTTP 头中就不再包含 Content-Length 了，它会使用负载大小为 0 的 HTTP 消息作为终结符表示消息的边界.</p>
-<p>客户端 net/http.Client 是级别较高的抽象，它提供了 HTTP 的一些细节，包括 Cookies 和重定向；而 net/http.Transport 结构体会处理 HTTP/HTTPS 协议的底层实现细节，其中会包含连接重用、构建请求以及发送请求等功能.</p>
-<p>Http客户端请求会使用连接池获取和初始化连接. TCP连接是四元组唯一(目的IP:目的端口:源IP:源端口), 相同的四元组的连接可以被复用的.</p>
-<p>我们可以在标准库的 net/http.Transport 中调用 net/http.Transport.RegisterProtocol 方法为不同的协议注册 net/http.RoundTripper 的实现</p>
-<p>服务路由URL与处理逻辑通过哈希映射, HTTP 服务器在处理请求时就会使用该哈希查找处理器</p>
-<p>如果当前 HTTP 服务接收到了海量的请求，会在内部创建大量的 Goroutine，这可能会使整个服务质量明显降低无法处理请求.</p>
-<h2 id="数据库标准库"><a href="#数据库标准库" class="headerlink" title="数据库标准库"></a>数据库标准库</h2><p>Go 语言的标准库 database/sql 就为访问关系型数据提供了通用的接口，这样不同数据库只要实现标准库中的接口，应用程序就可以通过标准库中的方法访问</p>
-<p>结构化查询语言（Structured Query Language、SQL）是在关系型数据库系统中使用的领域特定语言（Domain-Specific Language、DSL）</p>
-<p>所有关系型数据库都需要实现的驱动接口:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Driver <span class="keyword">interface</span> &#123;</span><br><span class="line">	Open(name <span class="keyword">string</span>) (Conn, error)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Conn <span class="keyword">interface</span> &#123;</span><br><span class="line">	Prepare(query <span class="keyword">string</span>) (Stmt, error)</span><br><span class="line">	Close() error</span><br><span class="line">	Begin() (Tx, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p> database/sql.Register 方法可以注册自定义的数据库驱动, MySQL 驱动会在 init 中调用上述方法将实现 database/sql/driver.Driver 接口的结构体注册到全局的驱动列表中. 之后通过驱动名获得结构体. 结构体 database/sql.DB 在刚刚初始化时不会包含任何的数据库连接，它持有的数据库连接池会在真正应用程序申请连接时在单独的 Goroutine 中获取</p>
-<p>Go的sql库是面向接口编程思想的体现 —— 只依赖抽象的接口，不要依赖具体的实现</p>
-
+          <p>go 语言设计与实现 学习笔记</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -1212,7 +321,7 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-09-12 21:55:37 / Modified: 21:58:59" itemprop="dateCreated datePublished" datetime="2020-09-12T21:55:37+08:00">2020-09-12</time>
+              <time title="Created: 2020-09-12 21:55:37 / Modified: 22:08:12" itemprop="dateCreated datePublished" datetime="2020-09-12T21:55:37+08:00">2020-09-12</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1249,16 +358,15 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="go-调度器是部分抢占式的以及如何调度"><a href="#go-调度器是部分抢占式的以及如何调度" class="headerlink" title="go 调度器是部分抢占式的以及如何调度"></a>go 调度器是部分抢占式的以及如何调度</h1><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></span><br><span class="line"><span class="keyword">import</span> <span class="string">"runtime"</span></span><br><span class="line"><span class="keyword">import</span> <span class="string">"time"</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">cpuIntensive</span><span class="params">(p *<span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">  <span class="keyword">for</span> i := <span class="number">1</span>; i &lt;= <span class="number">100000000000</span>; i++ &#123;</span><br><span class="line">    *p = i</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">  runtime.GOMAXPROCS(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">  x := <span class="number">0</span></span><br><span class="line">  <span class="keyword">go</span> cpuIntensive(&amp;x)</span><br><span class="line"></span><br><span class="line">  time.Sleep(<span class="number">100</span> * time.Millisecond)</span><br><span class="line"></span><br><span class="line">  <span class="comment">// printed only after cpuIntensive is completely finished</span></span><br><span class="line">  fmt.Printf(<span class="string">"x = %d.\n"</span>, x)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>执行上述代码, print只在cpuIntensive执行完毕后才打印. 除非你在cpuIntensive中手动加入了runtime.Gosched(). 原因是密集的cpu计算过程并不包含可以抢占的抢占点(IO阻塞/垃圾回收等), 实际使用场景中很少会有这种, 但是如果你遇到这样的事情, 就需要手动的添加一些可以抢占的点, 手动除非调度器执行调度.</p>
-<p>如果一个goroutine执行过程中到达了go中定义的可以抢占的点(IO/垃圾回收/等待输入等), 那么就会让出执行权给在同一个thread或全局goroutine队列中goroutine, 这个过程对于操作系统层面看是无感知的.切换的代价很小, 只需要变更3个寄存器的值,因此很轻量. go 多路复用thread线程, 这种实现不要求开发者自己去显示地通过事件循环和回调来处理futures/promises. 这种显示的处理需要是在同一个thread中手动创建事件循环,并利用操作系统提供的事件描述符与回调机制做处理.</p>
-<p>go中block的goroutine会调用对应的操作系统内核提供的多路并发机制(epoll等)来等待执行结果的返回并同时让出当前线程的执行权限给其他goroutine.但是如果系统不支持IO多路复用,go会创建一个新的线程会去执行其他goroutine, 并等待到block结束后,重新返回这个goroutine,这时可能会存在多于cpu数量GOMAXPROCS的内核线程,这时就不受GOMAXPROCS控制了.</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">evport -&gt; soloris   O(1)</span><br><span class="line">epoll -&gt; linux O(1)</span><br><span class="line">kequeue -&gt; OS X和freeBSD O(1)</span><br><span class="line">select -&gt; 所有系统平台 O(n) 最大支持1024个事件描述符</span><br></pre></td></tr></table></figure>
-
-<p>goroutine建立在事件驱动的架构之上. 同时并发的事件数量受到进程可以同时打开的文件描述符数量限制. 因此ulimit -n 必须设置一个合理值以供在进行大量同时的IO处理使用. 由于IO事件返回通常有一个超时设定, 返回后的文件描述符就会可被其他并发的事件使用, 因此一个较大的nofile值就足够cover大量的并发事件.</p>
-<p>对于并发请求服务时,还需要考虑服务端是否有并发限制, 所以同时执行的goroutine数量还需要有一定的考虑</p>
-<p>参考 <a href="https://hadar.gr/2017/lightweight-goroutines" target="_blank" rel="noopener">https://hadar.gr/2017/lightweight-goroutines</a></p>
-
+          <p>go 调度器是部分抢占式的以及如何调度</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/09/12/go%20%E8%B0%83%E5%BA%A6%E5%99%A8%E6%98%AF%E9%83%A8%E5%88%86%E6%8A%A2%E5%8D%A0%E5%BC%8F%E7%9A%84%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E8%B0%83%E5%BA%A6/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -1302,7 +410,7 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-09-12 21:55:37 / Modified: 21:58:43" itemprop="dateCreated datePublished" datetime="2020-09-12T21:55:37+08:00">2020-09-12</time>
+              <time title="Created: 2020-09-12 21:55:37 / Modified: 22:07:43" itemprop="dateCreated datePublished" datetime="2020-09-12T21:55:37+08:00">2020-09-12</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1339,15 +447,15 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="go高级编程–分布式系统学习笔记"><a href="#go高级编程–分布式系统学习笔记" class="headerlink" title="go高级编程–分布式系统学习笔记"></a>go高级编程–分布式系统学习笔记</h1><p>谷歌的chubby论文中提到: 基于强一致协议的锁适用于 粗粒度 的加锁操作, 粗粒度即占用锁时间较长的场景, 基于分布式的阻塞锁比较适合分布式任务调度场景, 但是不适合高频次的短时间抢锁操作. 比如对于秒杀系统来说, 使用redis或try-lock来做 胜者为王的操作. 而使用zookeeper/etcd就不适合这种场景, zookeeper的加锁会使得竞争者处于阻塞状态, 只有一个人成功返回. 而redis可用setnx操作使得失败者立刻返回, 胜者进入后续逻辑.  如果业务对锁的一致性要求很高,即保证锁数据的可靠性, 那么就需要使用zookeeper和etcd而不能用redis, 代价是较低的吞吐量和较高的延迟.<br>zk和etcd是无法通过横向扩展提高性能的, 只能增加多个集群.</p>
-<p>定时器的实现: 时间堆(小顶堆/四叉树–go内置定时器实现) 和 时间轮(类似hash或时钟)</p>
-<p>时间堆: 对于一个时间, 如果小于对顶则堆内定时任务都未到触发时间, 检查时间复杂度为o(1), 如果时间小于堆顶,则弹出对顶和做堆调整, 复杂度为o(lgN), 直到时间小于堆顶. 同时触发弹出任务.</p>
-<p>时间轮: 时间每次转动到一个刻度时检查其挂载的任务是否已经到期, 每个任务分配时通过hash 触发时间%时间轮元素大小来确定挂载位置, 如果冲突就通过链表挂载进行扩展. </p>
-<p>DSL可以表示程序的boolean表达式, json可以表示DSL, 所以json可以表示树状结构就能表示DSL就能描述程序的抽象语法树.</p>
-<p>canal通过伪装成mysql的从库获取mysql的binlog,解析成json格式通过kafka交给下游的数据库进行分析消费或者做OLAP(数据分析)事务,下游通过写入es进行纯查询业务, 要求表中必须有唯一的主键id保证写入数据不重复, 同时通过直接覆盖id对应数据来避免了区分新增还是更新.</p>
-<p>go 的rand.Perm是经过修正的随机洗牌算法, 使用经典的fisher-yates算法, 这个随机是伪随机. 如果需要使用真随机, 使用随机种子, <code>rand.Seed(time.Now().UnixNano())</code></p>
-<p>配置的本地缓存可以解决配置中心不可用的问题, 但是却又引入了配置文件不一致的问题,需要监控该问题. 配置中心对于大量的配置场景又需要考虑网络和存储负载. 同时配置文件的获取需要结合业务逻辑, 在业务逻辑执行时获取配置并更新配置会导致当前业务执行逻辑上的配置前后不一致.  配置的变更需要记录, 以便快速回滚.</p>
-
+          <p>go高级编程--分布式系统学习笔记</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/09/12/go%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B--%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -1391,7 +499,7 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-09-12 21:55:27 / Modified: 22:01:53" itemprop="dateCreated datePublished" datetime="2020-09-12T21:55:27+08:00">2020-09-12</time>
+              <time title="Created: 2020-09-12 21:55:27 / Modified: 22:08:03" itemprop="dateCreated datePublished" datetime="2020-09-12T21:55:27+08:00">2020-09-12</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1428,35 +536,15 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="尾调用-函数式编程-初识以及go的相关"><a href="#尾调用-函数式编程-初识以及go的相关" class="headerlink" title="尾调用/函数式编程 初识以及go的相关"></a>尾调用/函数式编程 初识以及go的相关</h1><h2 id="函数式编程"><a href="#函数式编程" class="headerlink" title="函数式编程"></a>函数式编程</h2><p>函数式编程: 函数式编程最常见的技术就是对一个集合做Map、Reduce和Filter操作，map对集合成员做了映射操作，生成新的集合；reduce就是降维操作，化整为零；filter顾名思义通过过滤器生成新的集合。</p>
-<p>其特点是把函数当成变量来用</p>
-<h2 id="递归"><a href="#递归" class="headerlink" title="递归"></a>递归</h2><p>递归算法在使用栈（stack，先进后出）来执行数据操作的时候是非常方便的，它比循环操作更快，并且代码的简洁性好。</p>
-<p>递归带来的效率问题主要是函数调用带来的额外开销（函数的入栈出栈），以及栈容量的限制（次数太多可能会stack overflow）</p>
-<h4 id="递归算法："><a href="#递归算法：" class="headerlink" title="递归算法："></a>递归算法：</h4><p>优点：代码简洁、清晰，并且容易验证正确性。（如果你真的理解了算法的话，否则你更晕）<br>缺点：它的运行需要较多次数的函数调用，如果调用层数比较深，需要增加额外的堆栈处理（还有可能出现堆栈溢出的情况），比如参数传递需要压栈等操作，会对执行效率有一定影响。但是，对于某些问题，如果不使用递归，那将是极端难看的代码。</p>
-<h4 id="循环算法："><a href="#循环算法：" class="headerlink" title="循环算法："></a>循环算法：</h4><p>优点：速度快，结构简单。<br>缺点：并不能解决所有的问题。有的问题适合使用递归而不是循环。如果使用循环并不困难的话，最好使用循环。</p>
-<p>系统栈（也叫核心栈、内核栈）是内存中属于操作系统空间的一块区域，其主要用途为： (1)保存中断现场，对于嵌套中断，被中断程序的现场信息依次压入系统栈，中断返回时逆序弹出； (2)保存操作系统子程序间相互调用的参数、返回值、返回点以及子程序(函数)的局部变量。<br>用户栈是用户进程空间中的一块区域，用于保存用户进程的子程序间相互调用的参数、返回值、返回点以及子程序(函数)的局部变量。<br>我们编写的递归程序属于用户程序，因此使用的是用户栈。</p>
-<h2 id="柯里化"><a href="#柯里化" class="headerlink" title="柯里化"></a>柯里化</h2><p>也就是把接受多个参数的方法变换成接受第一个参数的方法，并且返回接受余下的参数而且返回结果的新方法。将多参数的函数转换成单参数的形式</p>
-<p>例如:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">inc</span><span class="params">(x)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">incx</span><span class="params">(y)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> x+y</span><br><span class="line">    <span class="keyword">return</span> incx</span><br><span class="line"> </span><br><span class="line">inc2 = inc(<span class="number">2</span>)</span><br><span class="line">inc5 = inc(<span class="number">5</span>)</span><br><span class="line"> </span><br><span class="line"><span class="keyword">print</span> inc2(<span class="number">5</span>) <span class="comment"># 输出 7</span></span><br><span class="line"><span class="keyword">print</span> inc5(<span class="number">5</span>) <span class="comment"># 输出 10</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="尾调用-尾递归"><a href="#尾调用-尾递归" class="headerlink" title="尾调用/尾递归"></a>尾调用/尾递归</h2><p>某个函数的最后一步是调用另一个函数,这就是尾调用.</p>
-<p>尾调用由于是函数的最后一步操作，所以不需要保留外层函数的调用记录，因为调用位置、内部变量等信息都不会再用到了，<strong>只要直接用内层函数的调用记录，取代外层函数的调用记录就可以了。这就叫做”尾调用优化”（Tail call optimization），即只保留内层函数的调用记录。如果所有函数都是尾调用，那么完全可以做到每次执行时，调用记录只有一项，这将大大节省内存。</strong> 这就是”<strong>尾调用优化</strong>“的意义。</p>
-<p>函数调用自身，称为递归。如果尾调用自身，就称为尾递归。 如果其递归函数的第一个参数是需要返回的计算结果或者是中间变量.</p>
-<p>递归非常耗费内存，因为需要同时保存成千上百个调用记录，很容易发生”栈溢出”错误（stack overflow）。但对于尾递归来说，由于只存在一个调用记录，所以永远不会发生”栈溢出”错误。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用for循环执行</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">factorialFor</span><span class="params">(n <span class="keyword">int</span>)</span> <span class="title">int</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> n == <span class="number">1</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">	&#125;</span><br><span class="line">	res := <span class="number">1</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">2</span>; i &lt;= n; i++ &#123;</span><br><span class="line">		res = res * i</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> res</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 递归, 内存占用O(n) 因为需要保存n个调用记录(中间结果)</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">factorial</span><span class="params">(n <span class="keyword">int</span>)</span> <span class="title">int</span></span> &#123;</span><br><span class="line">  <span class="keyword">if</span> n == <span class="number">1</span> &#123;<span class="keyword">return</span> <span class="number">1</span>&#125;</span><br><span class="line">  <span class="keyword">return</span> n * factorial(n - <span class="number">1</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 尾递归, 理论上内存占用 O(1) 只需要保留一个调用记录, 实际上到go1.13都没有进行优化, 依旧是O(n) , 测试执行会比上面的快一点, 是因为函数调用尾递归调用中在管理stack frames上开销小一点. </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">factorial</span><span class="params">(n,total <span class="keyword">int</span>)</span> <span class="title">int</span></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">1</span> &#123; <span class="keyword">return</span> total&#125;</span><br><span class="line">    <span class="keyword">return</span> factorial(n<span class="number">-1</span>, n*total)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 测试结果:</span><br><span class="line">BenchmarkTailRecursive/For:-8         	68877586	        17.0 ns/op	       0 B/op	       0 allocs/op</span><br><span class="line">BenchmarkTailRecursive/Rec:-8         	10000900	       119 ns/op	       0 B/op	       0 allocs/op</span><br><span class="line">BenchmarkTailRecursive/Tail:-8        	11536790	       102 ns/op	       0 B/op	       0 allocs/op</span><br></pre></td></tr></table></figure>
-<p>似乎for循环更快. 因为减少了递归调用的压栈/出栈操作和函数调用的开销. </p>
-<p><strong>尾递归的实现，往往需要改写递归函数，确保最后一步只调用自身。做到这一点的方法，就是把所有用到的内部变量改写成函数的参数</strong> </p>
-<p>可用通过外层再包装一层函数来隐藏尾递归优化的多出来的参数</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Factorial</span><span class="params">(n <span class="keyword">int</span>)</span> <span class="title">int</span></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> factorial(n, <span class="number">1</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>也可以通过柯里化来做:</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">currying</span><span class="params">(fn <span class="keyword">func</span>, total <span class="keyword">int</span>)</span></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(fn <span class="keyword">func</span>, n <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">        <span class="keyword">return</span> fn(n,total)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> Factorial = currying(factorial,<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用: Factorial(5)</span></span><br></pre></td></tr></table></figure>
-<p>当然如果像python那样支持默认参数值的,就可以通过默认参数设置默认值隐藏第二个参数了.</p>
-<h2 id="go的尾调用-tail-calls-优化"><a href="#go的尾调用-tail-calls-优化" class="headerlink" title="go的尾调用(tail calls)优化"></a>go的尾调用(tail calls)优化</h2><p>当你要使用递归的时候，你需要意识到栈内存是一直增加的，直到遇到你设置好的 anchor 时，它的内存才开始下降。当我们说 Go 并没有优化递归操作时，我们需要承认一个事实，<strong>Go 并没有尝试着去优化栈内存无限增加这一操作, Go 没有 tail calls 进行任何优化, 调用栈并没有销毁。</strong> </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 汇编:</span><br><span class="line">— prog list &quot;TailRecursive&quot; —</span><br><span class="line">0018 (.&#x2F;main.go:17) TEXT TailRecursive+0(SB),$24-24</span><br><span class="line"></span><br><span class="line">0019 (.&#x2F;main.go:17) MOVQ number+0(FP),CX</span><br><span class="line"></span><br><span class="line">0020 (.&#x2F;main.go:17) LOCALS ,$0</span><br><span class="line">0021 (.&#x2F;main.go:17) TYPE number+0(FP)&#123;int&#125;,$8</span><br><span class="line">0022 (.&#x2F;main.go:17) TYPE product+8(FP)&#123;int&#125;,$8</span><br><span class="line">0023 (.&#x2F;main.go:17) TYPE ~anon2+16(FP)&#123;int&#125;,$8</span><br><span class="line"></span><br><span class="line">0024 (.&#x2F;main.go:19) MOVQ product+8(FP),AX</span><br><span class="line">0025 (.&#x2F;main.go:19) ADDQ CX,AX</span><br><span class="line"></span><br><span class="line">0026 (.&#x2F;main.go:21) CMPQ CX,$1</span><br><span class="line">0027 (.&#x2F;main.go:21) JNE ,30</span><br><span class="line"></span><br><span class="line">0028 (.&#x2F;main.go:23) MOVQ AX,~anon2+16(FP)</span><br><span class="line">0029 (.&#x2F;main.go:23) RET ,</span><br><span class="line"></span><br><span class="line">0030 (.&#x2F;main.go:26) MOVQ CX,BX</span><br><span class="line">0031 (.&#x2F;main.go:26) DECQ ,BX</span><br><span class="line"></span><br><span class="line">0032 (.&#x2F;main.go:26) MOVQ BX,(SP)</span><br><span class="line">0033 (.&#x2F;main.go:26) MOVQ AX,8(SP) &#x2F;&#x2F; 依旧不断地把参数压栈, 并未重复利用栈返回</span><br><span class="line">0034 (.&#x2F;main.go:26) CALL ,TailRecursive+0(SB)</span><br><span class="line"></span><br><span class="line">0035 (.&#x2F;main.go:26) MOVQ 16(SP),BX</span><br><span class="line"></span><br><span class="line">0036 (.&#x2F;main.go:26) MOVQ BX,~anon2+16(FP)</span><br><span class="line">0037 (.&#x2F;main.go:26) RET ,</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 通过chan去模拟尾递归, 这个调用栈会被优化, 因为每个goroutine执行完就返回了, 其会被销毁.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">RecursiveChannel</span><span class="params">(number <span class="keyword">int</span>, product <span class="keyword">int</span>, result <span class="keyword">chan</span> <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">    product = product + number</span><br><span class="line">    <span class="keyword">if</span> number == <span class="number">1</span> &#123;</span><br><span class="line">        result &lt;- product</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    Go RecursiveChannel(number<span class="number">-1</span>, product, result)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    result := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">int</span>)</span><br><span class="line">    RecursiveChannel(<span class="number">4</span>, <span class="number">0</span>, result)</span><br><span class="line">    answer := &lt;-result</span><br><span class="line">    fmt.Printf(<span class="string">"Recursive: %d\n"</span>, answer)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <p>尾调用/函数式编程以及go的相关 初识</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/09/12/%E5%B0%BE%E8%B0%83%E7%94%A8%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%20%E5%88%9D%E8%AF%86%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E7%9B%B8%E5%85%B3/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
