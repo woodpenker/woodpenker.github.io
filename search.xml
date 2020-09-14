@@ -1667,4 +1667,54 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
         <tag>golang</tag>
       </tags>
   </entry>
+  <entry>
+    <title>随机抽样/洗牌算法--Knuth-Durstenfeld Shuffle &amp;&amp; 蓄水池算法</title>
+    <url>/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&amp;&amp;%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<h2 id="随机抽样-洗牌算法–Knuth-Durstenfeld-Shuffle-amp-amp-蓄水池算法"><a href="#随机抽样-洗牌算法–Knuth-Durstenfeld-Shuffle-amp-amp-蓄水池算法" class="headerlink" title="随机抽样/洗牌算法–Knuth-Durstenfeld Shuffle &amp;&amp; 蓄水池算法"></a>随机抽样/洗牌算法–Knuth-Durstenfeld Shuffle &amp;&amp; 蓄水池算法</h2><p>洗牌算法有很多种, 蓄水池算法则是适合大量数据场景或者数据流下的等概率抽样</p>
+<h2 id="一种洗牌算法-Knuth-Durstenfeld-Shuffle"><a href="#一种洗牌算法-Knuth-Durstenfeld-Shuffle" class="headerlink" title="一种洗牌算法 Knuth-Durstenfeld Shuffle :"></a>一种洗牌算法 Knuth-Durstenfeld Shuffle :</h2><p><strong>可以从一个已知长度n的数组结尾开始做, 每次随机一个[0,n)范围(数组下标从0开始到n-1结束)内的随机数x, 交换尾部和第x个数据, 然后循环指针-1, 从n-1的位置继续重复之前的过程, 这时随机数范围变为[0,n-1), 直到到达起始位置0结束循环.</strong></p>
+<h4 id="证明"><a href="#证明" class="headerlink" title="证明:"></a>证明:</h4><p>设P(n) 为位置n放入i号数据的概率<br>第n位置的概率是 1/n<br>第n-1位置的概率是 1/(n-1) * (1 - P(n)) = 1/(n-1) * (1- 1/n) = 1/n<br>第n-k位置的概率是 1/(n-k) * (1- P(n))(1- P(n-1)) … (1 - P(n-k+1))= 1/n </p>
+<p>算法复杂度: O(n) 空间复杂度 O(1)<br>缺点: 需要事先直到确定的数据长度. 如果数据很长或者是个接近无限的数据流,计算一次数据的长度很耗时/遍历一遍所有数据(数据量大到内存放不下, 只能流式读取), </p>
+<p>在这种限定下 : 给定一个数据流，数据流长度N很大，且N直到处理完所有数据之前都不可知，请问如何在只遍历一遍数据（O(N)）的情况下，能够随机选取出m个不重复的数据。 这种情况就需要使用蓄水池算法.</p>
+<h4 id="实现"><a href="#实现" class="headerlink" title="实现:"></a>实现:</h4><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 原地随机</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">shuffle</span><span class="params">(data []<span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	l:= <span class="built_in">len</span>(data)</span><br><span class="line">	<span class="keyword">var</span> rnd <span class="keyword">int</span></span><br><span class="line">	<span class="keyword">var</span> n *big.Int</span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">for</span> i:=l<span class="number">-1</span>;i&gt;<span class="number">0</span>;i-- &#123;</span><br><span class="line">		n, err = rand.Int(rand.Reader,big.NewInt(<span class="keyword">int64</span>(i)))</span><br><span class="line">		<span class="keyword">if</span> err!=<span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line">		rnd = <span class="keyword">int</span>(n.Int64())</span><br><span class="line">		data[i], data[rnd] = data[rnd], data[i]</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 不改变原数据 </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">shuffleCopy</span><span class="params">(data []<span class="keyword">interface</span>&#123;&#125;)</span> []<span class="title">interface</span></span>&#123;&#125;&#123;</span><br><span class="line">	l:= <span class="built_in">len</span>(data)</span><br><span class="line">	res := <span class="built_in">make</span>([]<span class="keyword">interface</span>&#123;&#125;,l)</span><br><span class="line">	<span class="built_in">copy</span>(res,data)</span><br><span class="line">	<span class="keyword">var</span> rnd <span class="keyword">int</span></span><br><span class="line">	<span class="keyword">var</span> n *big.Int</span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">for</span> i:=l<span class="number">-1</span>;i&gt;<span class="number">0</span>;i-- &#123;</span><br><span class="line">		n, err = rand.Int(rand.Reader,big.NewInt(<span class="keyword">int64</span>(i)))</span><br><span class="line">		<span class="keyword">if</span> err!=<span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line">		rnd = <span class="keyword">int</span>(n.Int64())</span><br><span class="line">		res[i], res[rnd] = res[rnd], res[i]</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> res</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="蓄水池算法"><a href="#蓄水池算法" class="headerlink" title="蓄水池算法"></a>蓄水池算法</h2><p>算法思路如下：</p>
+<ol>
+<li>准备: 创建一个m大小的数据池, 当作蓄水池. 通过i对已经处理的数据进行计数</li>
+<li>如果接收的数据量小于m，则依次放入蓄水池。(先将前m个数据放入其中)</li>
+<li>当接收到第i个数据时，i &gt;= m，在[0, i]范围内取以随机数d，若d的落在[0, m-1]范围内，则用接收到的第i个数据替换蓄水池中的第d个数据。(当池子满了, 就在当前计数范围内随机一个数字d, 如果小于池子的容量, 就用数据i替换池子中编号d对应的数据)</li>
+<li>重复步骤3, 直到遍历完所有数据N。</li>
+</ol>
+<p>当处理完所有的数据时，蓄水池中的<strong>每个数据都是以m/N的概率获得</strong>的。这个算法不需要事先获知N的大小. </p>
+<h4 id="证明-1"><a href="#证明-1" class="headerlink" title="证明:"></a>证明:</h4><p>抄自:  <a href="https://www.jianshu.com/p/7a9ea6ece2af" target="_blank" rel="noopener">https://www.jianshu.com/p/7a9ea6ece2af</a><br>假设数据开始编号为1.第i个接收到的数据最后能够留在蓄水池中的概率=第i个数据进入过蓄水池的概率*之后第i个数据不被替换的概率（第i+1到第N次处理数据都不会被替换）。</p>
+<ol>
+<li>当i&lt;=m时，数据直接放进蓄水池，所以第i个数据进入过蓄水池的概率=1。</li>
+<li>当i&gt;m时，在[1,i]内选取随机数d，如果d&lt;=m，则使用第i个数据替换蓄水池中第d个数据，因此第i个数据进入过蓄水池的概率=m/i。</li>
+<li>当i&lt;=m时，程序从接收到第m+1个数据时开始执行替换操作，第m+1次处理会替换池中数据的为m/(m+1)，会替换掉第i个数据的概率为1/m，则第m+1次处理替换掉第i个数据的概率为(m/(m+1))<em>(1/m)=1/(m+1)，不被替换的概率为1-1/(m+1)=m/(m+1)。依次，第m+2次处理不替换掉第i个数据概率为(m+1)/(m+2)…第N次处理不替换掉第i个数据的概率为(N-1)/N。所以，之后第i个数据不被替换的概率=m/(m+1)</em>(m+1)/(m+2)<em>…</em>(N-1)/N=m/N。</li>
+<li>当i&gt;m时，程序从接收到第i+1个数据时开始有可能替换第i个数据。则参考上述第3点，之后第i个数据不被替换的概率=i/N。</li>
+<li>结合第1点和第3点可知，当i&lt;=m时，第i个接收到的数据最后留在蓄水池中的概率=1<em>m/N=m/N。结合第2点和第4点可知，当i&gt;m时，第i个接收到的数据留在蓄水池中的概率=m/i</em>i/N=m/N。</li>
+</ol>
+<p>综上可知，每个数据最后被选中留在蓄水池中的概率为m/N。</p>
+<h4 id="实现-1"><a href="#实现-1" class="headerlink" title="实现:"></a>实现:</h4><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">waterPoolSample</span><span class="params">(data []<span class="keyword">interface</span>&#123;&#125;, count <span class="keyword">int</span>)</span> []<span class="title">interface</span></span>&#123;&#125; &#123;</span><br><span class="line">	pool := <span class="built_in">make</span>([]<span class="keyword">interface</span>&#123;&#125;,count)</span><br><span class="line">	<span class="built_in">copy</span>(pool, data)</span><br><span class="line">	<span class="keyword">var</span> rnd <span class="keyword">int</span></span><br><span class="line">	<span class="keyword">var</span> n *big.Int</span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">for</span> i := count; i &lt; <span class="built_in">len</span>(data); i++ &#123;</span><br><span class="line">		n, err = rand.Int(rand.Reader,big.NewInt(<span class="keyword">int64</span>(i)))</span><br><span class="line">		<span class="keyword">if</span> err!=<span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line">		rnd = <span class="keyword">int</span>(n.Int64())</span><br><span class="line">		<span class="keyword">if</span> rnd &gt;= count &#123;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		pool[rnd] = data[i]</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> pool</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="分布式蓄水池"><a href="#分布式蓄水池" class="headerlink" title="分布式蓄水池:"></a>分布式蓄水池:</h2><p>参考 <a href="https://www.jianshu.com/p/7a9ea6ece2af" target="_blank" rel="noopener">https://www.jianshu.com/p/7a9ea6ece2af</a></p>
+<p>如果需要抽出m个数据</p>
+<ol>
+<li>假设有K台机器，将大数据集分成K个数据流，每台机器使用单机版蓄水池抽样处理一个数据流，抽样m个数据，并最后记录处理的数据量为N1, N2, …, Nk, …, NK(假设m&lt;Nk)。N1+N2+…+NK=N。(首先对子数据集Nk执行蓄水池抽样算法, K个执行节点就K个水池, 这样总共抽出m*k个数据)</li>
+<li>取[1, N]一个随机数d(N由第一步中计算得来)，若d&lt;N1，则在第一台机器的蓄水池中等概率不放回地（1/m）选取一个数据；若N1&lt;=d&lt;(N1+N2)，则在第二台机器的蓄水池中等概率不放回地选取一个数据；一次类推，重复m次，则最终从N大数据集中选出m个数据。(在最终的m*k个数据中随机抽取m个数据)</li>
+</ol>
+<p>第2步m/N的概率验证如下：</p>
+<ol>
+<li>第k台机器中的蓄水池数据被选取的概率为m/(Nk)。</li>
+<li>从第k台机器的蓄水池中选取一个数据放进最终蓄水池的概率为Nk/N。</li>
+<li>第k台机器蓄水池的一个数据被选中的概率为1/m。（不放回选取时等概率的）</li>
+<li>重复m次选取，则每个数据被选中的概率为m<em>(m/Nk</em>Nk/N*1/m)=m/N。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>读书笔记</category>
+      </categories>
+      <tags>
+        <tag>算法</tag>
+      </tags>
+  </entry>
 </search>
