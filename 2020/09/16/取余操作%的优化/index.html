@@ -20,20 +20,21 @@
     var CONFIG = {"hostname":"woodpenker.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="go高级编程--分布式系统学习笔记">
+  <meta name="description" content="取余操作%的在除数是2的倍数时的计算优化">
 <meta property="og:type" content="article">
-<meta property="og:title" content="go高级编程--分布式系统学习笔记">
-<meta property="og:url" content="https://woodpenker.github.io/2020/09/12/go%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B--%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:title" content="取余操作%的优化">
+<meta property="og:url" content="https://woodpenker.github.io/2020/09/16/%E5%8F%96%E4%BD%99%E6%93%8D%E4%BD%9C%%E7%9A%84%E4%BC%98%E5%8C%96/index.html">
 <meta property="og:site_name" content="woodpenker&#39;s blog">
-<meta property="og:description" content="go高级编程--分布式系统学习笔记">
+<meta property="og:description" content="取余操作%的在除数是2的倍数时的计算优化">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2020-09-12T13:55:37.359Z">
-<meta property="article:modified_time" content="2020-09-12T14:10:53.790Z">
+<meta property="article:published_time" content="2020-09-16T04:10:30.000Z">
+<meta property="article:modified_time" content="2020-09-16T04:13:13.779Z">
 <meta property="article:author" content="woodpenker">
 <meta property="article:tag" content="golang">
+<meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://woodpenker.github.io/2020/09/12/go%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B--%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
+<link rel="canonical" href="https://woodpenker.github.io/2020/09/16/%E5%8F%96%E4%BD%99%E6%93%8D%E4%BD%9C%%E7%9A%84%E4%BC%98%E5%8C%96/">
 
 
 <script id="page-configurations">
@@ -46,7 +47,7 @@
   };
 </script>
 
-  <title>go高级编程--分布式系统学习笔记 | woodpenker's blog</title>
+  <title>取余操作%的优化 | woodpenker's blog</title>
   
     <script>
       function sendPageView() {
@@ -213,7 +214,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2020/09/12/go%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B--%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
+    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2020/09/16/%E5%8F%96%E4%BD%99%E6%93%8D%E4%BD%9C%%E7%9A%84%E4%BC%98%E5%8C%96/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -226,7 +227,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          go高级编程--分布式系统学习笔记
+          取余操作%的优化
         </h1>
 
         <div class="post-meta">
@@ -237,7 +238,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-09-12 21:55:37 / Modified: 22:10:53" itemprop="dateCreated datePublished" datetime="2020-09-12T21:55:37+08:00">2020-09-12</time>
+              <time title="Created: 2020-09-16 12:10:30 / Modified: 12:13:13" itemprop="dateCreated datePublished" datetime="2020-09-16T12:10:30+08:00">2020-09-16</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -262,16 +263,16 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>1k</span>
+              <span>2.5k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>1 mins.</span>
+              <span>2 mins.</span>
             </span>
-            <div class="post-description">go高级编程--分布式系统学习笔记</div>
+            <div class="post-description">取余操作%的在除数是2的倍数时的计算优化</div>
 
         </div>
       </header>
@@ -282,14 +283,13 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="go高级编程–分布式系统学习笔记"><a href="#go高级编程–分布式系统学习笔记" class="headerlink" title="go高级编程–分布式系统学习笔记"></a>go高级编程–分布式系统学习笔记</h1><p>谷歌的chubby论文中提到: 基于强一致协议的锁适用于 粗粒度 的加锁操作, 粗粒度即占用锁时间较长的场景, 基于分布式的阻塞锁比较适合分布式任务调度场景, 但是不适合高频次的短时间抢锁操作. 比如对于秒杀系统来说, 使用redis或try-lock来做 胜者为王的操作. 而使用zookeeper/etcd就不适合这种场景, zookeeper的加锁会使得竞争者处于阻塞状态, 只有一个人成功返回. 而redis可用setnx操作使得失败者立刻返回, 胜者进入后续逻辑.  如果业务对锁的一致性要求很高,即保证锁数据的可靠性, 那么就需要使用zookeeper和etcd而不能用redis, 代价是较低的吞吐量和较高的延迟.<br>zk和etcd是无法通过横向扩展提高性能的, 只能增加多个集群.</p>
-<p>定时器的实现: 时间堆(小顶堆/四叉树–go内置定时器实现) 和 时间轮(类似hash或时钟)</p>
-<p>时间堆: 对于一个时间, 如果小于对顶则堆内定时任务都未到触发时间, 检查时间复杂度为o(1), 如果时间小于堆顶,则弹出对顶和做堆调整, 复杂度为o(lgN), 直到时间小于堆顶. 同时触发弹出任务.</p>
-<p>时间轮: 时间每次转动到一个刻度时检查其挂载的任务是否已经到期, 每个任务分配时通过hash 触发时间%时间轮元素大小来确定挂载位置, 如果冲突就通过链表挂载进行扩展. </p>
-<p>DSL可以表示程序的boolean表达式, json可以表示DSL, 所以json可以表示树状结构就能表示DSL就能描述程序的抽象语法树.</p>
-<p>canal通过伪装成mysql的从库获取mysql的binlog,解析成json格式通过kafka交给下游的数据库进行分析消费或者做OLAP(数据分析)事务,下游通过写入es进行纯查询业务, 要求表中必须有唯一的主键id保证写入数据不重复, 同时通过直接覆盖id对应数据来避免了区分新增还是更新.</p>
-<p>go 的rand.Perm是经过修正的随机洗牌算法, 使用经典的fisher-yates算法, 这个随机是伪随机. 如果需要使用真随机, 使用随机种子, <code>rand.Seed(time.Now().UnixNano())</code></p>
-<p>配置的本地缓存可以解决配置中心不可用的问题, 但是却又引入了配置文件不一致的问题,需要监控该问题. 配置中心对于大量的配置场景又需要考虑网络和存储负载. 同时配置文件的获取需要结合业务逻辑, 在业务逻辑执行时获取配置并更新配置会导致当前业务执行逻辑上的配置前后不一致.  配置的变更需要记录, 以便快速回滚.</p>
+        <h1 id="取余操作-的优化"><a href="#取余操作-的优化" class="headerlink" title="取余操作%的优化"></a>取余操作%的优化</h1><p><code>a%b</code> 这个取余操作据说会比较慢, 如果这个b刚好是2的n次方, 那么有一种优化方式是使用 <code>a &amp; (2^n-1)</code><br>也就是说 <code>a &amp; (b -1)</code> 因为 <code>a = x * b + y(余数)</code>, 那么 <code>a</code> 和 <code>b-1</code>(低位每位都是1) 取&amp; 就是获得了 y的值. </p>
+<p>具体这个方式能快多少? 测了就知道:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// main.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doPercent</span><span class="params">(n <span class="keyword">int</span>, divisor <span class="keyword">int</span>)</span> <span class="title">int</span></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> n % divisor</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doAnd</span><span class="params">(n <span class="keyword">int</span>, divisor <span class="keyword">int</span>)</span> <span class="title">int</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> n &amp; (divisor <span class="number">-1</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// main_test.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestMod</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">	testCase := []<span class="keyword">struct</span>&#123;</span><br><span class="line">		N <span class="keyword">int</span></span><br><span class="line">		Div <span class="keyword">int</span></span><br><span class="line">		Expect <span class="keyword">int</span></span><br><span class="line">	&#125;&#123;</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">4</span>,</span><br><span class="line">			Div: <span class="number">2</span>,</span><br><span class="line">			Expect: <span class="number">0</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">15</span>,</span><br><span class="line">			Div: <span class="number">8</span>,</span><br><span class="line">			Expect: <span class="number">7</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">5</span>,</span><br><span class="line">			Div: <span class="number">8</span>,</span><br><span class="line">			Expect: <span class="number">5</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">5</span>,</span><br><span class="line">			Div: <span class="number">1</span>,</span><br><span class="line">			Expect: <span class="number">0</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">0</span>,</span><br><span class="line">			Div: <span class="number">2</span>,</span><br><span class="line">			Expect: <span class="number">0</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">1</span>&lt;&lt;<span class="number">31</span>,</span><br><span class="line">			Div: <span class="number">1</span>&lt;&lt;<span class="number">30</span>,</span><br><span class="line">			Expect: <span class="number">0</span>,</span><br><span class="line">		&#125;,</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, c  := <span class="keyword">range</span> testCase &#123;</span><br><span class="line">		t.Run(fmt.Sprintf(<span class="string">"n: %v, div: %v, expect: %v"</span>, c.N, c.Div,c.Expect), <span class="function"><span class="keyword">func</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">			assert.Equal(t, c.Expect, doPercent(c.N,c.Div))</span><br><span class="line">			assert.Equal(t, c.Expect, doAnd(c.N,c.Div))</span><br><span class="line">		&#125;)</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkMod</span><span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">	testCase := []<span class="keyword">struct</span>&#123;</span><br><span class="line">		N <span class="keyword">int</span></span><br><span class="line">		Div <span class="keyword">int</span></span><br><span class="line">		Expect <span class="keyword">int</span></span><br><span class="line">	&#125;&#123;</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">4</span>,</span><br><span class="line">			Div: <span class="number">2</span>,</span><br><span class="line">			Expect: <span class="number">0</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">15</span>,</span><br><span class="line">			Div: <span class="number">8</span>,</span><br><span class="line">			Expect: <span class="number">7</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">1</span>&lt;&lt;<span class="number">13</span>+ <span class="number">1</span>&lt;&lt; <span class="number">10</span> + <span class="number">12345</span>,</span><br><span class="line">			Div: <span class="number">8</span>,</span><br><span class="line">			Expect: <span class="number">7</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">		&#123;</span><br><span class="line">			N: <span class="number">1</span>&lt;&lt;<span class="number">30</span> + <span class="number">13</span>,</span><br><span class="line">			Div: <span class="number">1</span>&lt;&lt;<span class="number">16</span>,</span><br><span class="line">			Expect: <span class="number">0</span>,</span><br><span class="line">		&#125;,</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, c := <span class="keyword">range</span> testCase &#123;</span><br><span class="line">		b.Run(fmt.Sprintf(<span class="string">"test do percent with n: %v, div: %v"</span>,c.N,c.Div),<span class="function"><span class="keyword">func</span> <span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">				doPercent(c.N,c.Div)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;)</span><br><span class="line">		b.Run(fmt.Sprintf(<span class="string">"test do and with n: %v, div: %v"</span>,c.N,c.Div),<span class="function"><span class="keyword">func</span> <span class="params">(b *testing.B)</span></span> &#123;</span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</span><br><span class="line">				doAnd(c.N,c.Div)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>benchmark结果:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">goos: linux</span><br><span class="line">goarch: amd64</span><br><span class="line">pkg: test</span><br><span class="line">BenchmarkMod&#x2F;test_do_percent_with_n:_4,_div:_2-8         	984819216	         1.18 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">BenchmarkMod&#x2F;test_do_and_with_n:_4,_div:_2-8             	1000000000	         0.592 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">BenchmarkMod&#x2F;test_do_percent_with_n:_15,_div:_8-8        	876655876	         1.21 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">BenchmarkMod&#x2F;test_do_and_with_n:_15,_div:_8-8            	1000000000	         0.665 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">BenchmarkMod&#x2F;test_do_percent_with_n:_21561,_div:_8-8     	1000000000	         1.21 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">BenchmarkMod&#x2F;test_do_and_with_n:_21561,_div:_8-8         	1000000000	         0.574 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">BenchmarkMod&#x2F;test_do_percent_with_n:_1073741837,_div:_65536-8         	1000000000	         1.21 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">BenchmarkMod&#x2F;test_do_and_with_n:_1073741837,_div:_65536-8             	1000000000	         0.620 ns&#x2F;op	       0 B&#x2F;op	       0 allocs&#x2F;op</span><br><span class="line">PASS</span><br><span class="line">ok  	test	7.878s</span><br></pre></td></tr></table></figure>
+
+<p>可见效率吊打使用%啊! 性能优化真的是与算法关系+系统体系结构关系太大了. </p>
 
     </div>
 
@@ -300,6 +300,7 @@
       <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/golang/" rel="tag"># golang</a>
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
           </div>
 
         
@@ -321,13 +322,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/09/12/%E5%B0%BE%E8%B0%83%E7%94%A8%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%20%E5%88%9D%E8%AF%86%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E7%9B%B8%E5%85%B3/" rel="prev" title="尾调用/函数式编程 初识以及go的相关">
-      <i class="fa fa-chevron-left"></i> 尾调用/函数式编程 初识以及go的相关
+    <a href="/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&&%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/" rel="prev" title="随机抽样/洗牌算法--Knuth-Durstenfeld Shuffle && 蓄水池算法">
+      <i class="fa fa-chevron-left"></i> 随机抽样/洗牌算法--Knuth-Durstenfeld Shuffle && 蓄水池算法
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/09/12/go%20%E8%B0%83%E5%BA%A6%E5%99%A8%E6%98%AF%E9%83%A8%E5%88%86%E6%8A%A2%E5%8D%A0%E5%BC%8F%E7%9A%84%E4%BB%A5%E5%8F%8A%E5%A6%82%E4%BD%95%E8%B0%83%E5%BA%A6/" rel="next" title="go 调度器是部分抢占式的以及如何调度">
-      go 调度器是部分抢占式的以及如何调度 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -387,7 +385,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#go高级编程–分布式系统学习笔记"><span class="nav-number">1.</span> <span class="nav-text">go高级编程–分布式系统学习笔记</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#取余操作-的优化"><span class="nav-number">1.</span> <span class="nav-text">取余操作%的优化</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -546,7 +544,7 @@ NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
       repo        : 'woodpenker.github.io',
       owner       : 'woodpenker',
       admin       : ['woodpenker'],
-      id          : 'e99232e976ce8ab785d29fcc073e750b',
+      id          : '19ddc196d3ab1de75a51938d83ce4cfe',
         language: 'en',
       distractionFreeMode: true
     });
