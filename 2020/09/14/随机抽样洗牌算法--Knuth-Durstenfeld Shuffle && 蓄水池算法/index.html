@@ -28,7 +28,7 @@
 <meta property="og:description" content="Knuth-Durstenfeld Shuffle和蓄水池算法的学习理解与实现">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-14T09:20:43.000Z">
-<meta property="article:modified_time" content="2020-09-14T10:37:07.764Z">
+<meta property="article:modified_time" content="2020-11-12T07:43:40.741Z">
 <meta property="article:author" content="woodpenker">
 <meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
@@ -235,10 +235,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-09-14 17:20:43 / Modified: 18:37:07" itemprop="dateCreated datePublished" datetime="2020-09-14T17:20:43+08:00">2020-09-14</time>
+              <time title="Created: 2020-09-14 17:20:43" itemprop="dateCreated datePublished" datetime="2020-09-14T17:20:43+08:00">2020-09-14</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-12 15:43:40" itemprop="dateModified" datetime="2020-11-12T15:43:40+08:00">2020-11-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -262,7 +268,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.1k</span>
+              <span>3.2k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -283,9 +289,9 @@
 
       
         <h2 id="随机抽样-洗牌算法–Knuth-Durstenfeld-Shuffle-amp-amp-蓄水池算法"><a href="#随机抽样-洗牌算法–Knuth-Durstenfeld-Shuffle-amp-amp-蓄水池算法" class="headerlink" title="随机抽样/洗牌算法–Knuth-Durstenfeld Shuffle &amp;&amp; 蓄水池算法"></a>随机抽样/洗牌算法–Knuth-Durstenfeld Shuffle &amp;&amp; 蓄水池算法</h2><p>洗牌算法有很多种, 蓄水池算法则是适合大量数据场景或者数据流下的等概率抽样</p>
-<h2 id="一种洗牌算法-Knuth-Durstenfeld-Shuffle"><a href="#一种洗牌算法-Knuth-Durstenfeld-Shuffle" class="headerlink" title="一种洗牌算法 Knuth-Durstenfeld Shuffle :"></a>一种洗牌算法 Knuth-Durstenfeld Shuffle :</h2><p><strong>可以从一个已知长度n的数组结尾开始做, 每次随机一个[0,n)范围(数组下标从0开始到n-1结束)内的随机数x, 交换尾部和第x个数据, 然后循环指针-1, 从n-1的位置继续重复之前的过程, 这时随机数范围变为[0,n-1), 直到到达起始位置0结束循环.</strong></p>
+<h2 id="一种洗牌算法-Knuth-Durstenfeld-Shuffle"><a href="#一种洗牌算法-Knuth-Durstenfeld-Shuffle" class="headerlink" title="一种洗牌算法 Knuth-Durstenfeld Shuffle :"></a>一种洗牌算法 Knuth-Durstenfeld Shuffle :</h2><p><strong>对于一个已知长度n的数组, 可以从数组结尾的位置开始, 每次随机一个[0,i)范围(数组下标从0开始到n-1结束)内的随机数x, i为当前数据在数组中的下标,交换i位置和x位置的数据, 然后i-1并继续重复之前的过程直到到达数组的头部即下标为0的位置以后结束循环.</strong></p>
 <h4 id="证明"><a href="#证明" class="headerlink" title="证明:"></a>证明:</h4><p>设P(n) 为位置n放入i号数据的概率<br>第n位置的概率是 1/n<br>第n-1位置的概率是 1/(n-1) * (1 - P(n)) = 1/(n-1) * (1- 1/n) = 1/n<br>第n-k位置的概率是 1/(n-k) * (1- P(n))(1- P(n-1)) … (1 - P(n-k+1))= 1/n </p>
-<p>算法复杂度: O(n) 空间复杂度 O(1)<br>缺点: 需要事先直到确定的数据长度. 如果数据很长或者是个接近无限的数据流,计算一次数据的长度很耗时/遍历一遍所有数据(数据量大到内存放不下, 只能流式读取), </p>
+<p>算法复杂度: O(n) 空间复杂度 O(1)<br>缺点: 需要事先知道确定的数据长度. 如果数据很长或者是个接近无限的数据流,计算一次数据的长度很耗时/遍历一遍所有数据(数据量大到内存放不下, 只能流式读取), </p>
 <p>在这种限定下 : 给定一个数据流，数据流长度N很大，且N直到处理完所有数据之前都不可知，请问如何在只遍历一遍数据（O(N)）的情况下，能够随机选取出m个不重复的数据。 这种情况就需要使用蓄水池算法.</p>
 <h4 id="实现"><a href="#实现" class="headerlink" title="实现:"></a>实现:</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 原地随机</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">shuffle</span><span class="params">(data []<span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	l:= <span class="built_in">len</span>(data)</span><br><span class="line">	<span class="keyword">var</span> rnd <span class="keyword">int</span></span><br><span class="line">	<span class="keyword">var</span> n *big.Int</span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">for</span> i:=l<span class="number">-1</span>;i&gt;<span class="number">0</span>;i-- &#123;</span><br><span class="line">		n, err = rand.Int(rand.Reader,big.NewInt(<span class="keyword">int64</span>(i)))</span><br><span class="line">		<span class="keyword">if</span> err!=<span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line">		rnd = <span class="keyword">int</span>(n.Int64())</span><br><span class="line">		data[i], data[rnd] = data[rnd], data[i]</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 不改变原数据 </span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">shuffleCopy</span><span class="params">(data []<span class="keyword">interface</span>&#123;&#125;)</span> []<span class="title">interface</span></span>&#123;&#125;&#123;</span><br><span class="line">	l:= <span class="built_in">len</span>(data)</span><br><span class="line">	res := <span class="built_in">make</span>([]<span class="keyword">interface</span>&#123;&#125;,l)</span><br><span class="line">	<span class="built_in">copy</span>(res,data)</span><br><span class="line">	<span class="keyword">var</span> rnd <span class="keyword">int</span></span><br><span class="line">	<span class="keyword">var</span> n *big.Int</span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">for</span> i:=l<span class="number">-1</span>;i&gt;<span class="number">0</span>;i-- &#123;</span><br><span class="line">		n, err = rand.Int(rand.Reader,big.NewInt(<span class="keyword">int64</span>(i)))</span><br><span class="line">		<span class="keyword">if</span> err!=<span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line">		rnd = <span class="keyword">int</span>(n.Int64())</span><br><span class="line">		res[i], res[rnd] = res[rnd], res[i]</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> res</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -306,7 +312,7 @@
 <li>结合第1点和第3点可知，当i&lt;=m时，第i个接收到的数据最后留在蓄水池中的概率=1<em>m/N=m/N。结合第2点和第4点可知，当i&gt;m时，第i个接收到的数据留在蓄水池中的概率=m/i</em>i/N=m/N。</li>
 </ol>
 <p>综上可知，每个数据最后被选中留在蓄水池中的概率为m/N。</p>
-<h4 id="实现-1"><a href="#实现-1" class="headerlink" title="实现:"></a>实现:</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">waterPoolSample</span><span class="params">(data []<span class="keyword">interface</span>&#123;&#125;, count <span class="keyword">int</span>)</span> []<span class="title">interface</span></span>&#123;&#125; &#123;</span><br><span class="line">	pool := <span class="built_in">make</span>([]<span class="keyword">interface</span>&#123;&#125;,count)</span><br><span class="line">	<span class="built_in">copy</span>(pool, data)</span><br><span class="line">	<span class="keyword">var</span> rnd <span class="keyword">int</span></span><br><span class="line">	<span class="keyword">var</span> n *big.Int</span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">for</span> i := count; i &lt; <span class="built_in">len</span>(data); i++ &#123;</span><br><span class="line">		n, err = rand.Int(rand.Reader,big.NewInt(<span class="keyword">int64</span>(i)))</span><br><span class="line">		<span class="keyword">if</span> err!=<span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line">		rnd = <span class="keyword">int</span>(n.Int64())</span><br><span class="line">		<span class="keyword">if</span> rnd &gt;= count &#123;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		pool[rnd] = data[i]</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> pool</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="实现-1"><a href="#实现-1" class="headerlink" title="实现:"></a>实现:</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">waterPoolSample</span><span class="params">(data []<span class="keyword">interface</span>&#123;&#125;, count <span class="keyword">int</span>)</span> []<span class="title">interface</span></span>&#123;&#125; &#123;</span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">len</span>(data) &lt; count &#123;</span><br><span class="line">      count = <span class="built_in">len</span>(data)</span><br><span class="line">  &#125;</span><br><span class="line">	pool := <span class="built_in">make</span>([]<span class="keyword">interface</span>&#123;&#125;,count)</span><br><span class="line">	<span class="built_in">copy</span>(pool, data)</span><br><span class="line">	<span class="keyword">var</span> rnd <span class="keyword">int</span></span><br><span class="line">	<span class="keyword">var</span> n *big.Int</span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">for</span> i := count; i &lt; <span class="built_in">len</span>(data); i++ &#123;</span><br><span class="line">		n, err = rand.Int(rand.Reader,big.NewInt(<span class="keyword">int64</span>(i)))</span><br><span class="line">		<span class="keyword">if</span> err!=<span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line">		rnd = <span class="keyword">int</span>(n.Int64())</span><br><span class="line">		<span class="keyword">if</span> rnd &gt;= count &#123;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		pool[rnd] = data[i]</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> pool</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h2 id="分布式蓄水池"><a href="#分布式蓄水池" class="headerlink" title="分布式蓄水池:"></a>分布式蓄水池:</h2><p>参考 <a href="https://www.jianshu.com/p/7a9ea6ece2af" target="_blank" rel="noopener">https://www.jianshu.com/p/7a9ea6ece2af</a></p>
 <p>如果需要抽出m个数据</p>
@@ -432,20 +438,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-count">21</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -481,7 +487,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="Symbols count total">133k</span>
+    <span title="Symbols count total">134k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
