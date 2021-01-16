@@ -2043,4 +2043,51 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
         <tag>i3wm</tag>
       </tags>
   </entry>
+  <entry>
+    <title>学习uber-go开发规范笔记</title>
+    <url>/2021/01/16/%E6%96%87%E6%A1%A3%20httpsgithub.comuber-goguide/</url>
+    <content><![CDATA[<p>文档: <a href="https://github.com/uber-go/guide" target="_blank" rel="noopener">https://github.com/uber-go/guide</a></p>
+<p>中文: <a href="https://github.com/xxjwxc/uber_go_guide_cn" target="_blank" rel="noopener">https://github.com/xxjwxc/uber_go_guide_cn</a></p>
+<p>在阅读中发现自己当前认知上的不足之处: </p>
+<ol>
+<li><p>把接口Interface只当作值传递即可, 接口底层实际上就是两个指针type和data</p>
+</li>
+<li><p>尽可能在编译期让实现接口的错误被检查出来, 例如让通过<code>var _ http.Handler = (*Handler) nil</code> 来检查<code>*Handler</code>是否真的实现了<code>http.Handler</code></p>
+</li>
+<li><p>slice或map是指针, 在使用临界处需要进行拷贝传递以避免多方使用时修改到同一个底层数据</p>
+</li>
+<li><p>函数参数在定义时间的参数使用<code>time.Duration</code>或<code>time.Time</code>, 避免使用<code>int</code>来表示. 另外在<code>json</code>解析时最好加上<code>int</code>类型的单位标记,如<code>IntervalSeconds int &#39;json:&quot;intervalSeconds&quot;&#39;</code> 而不是直接使用<code>Interval</code> </p>
+</li>
+<li><p>尽量返回error而不是panic, 只在调用方或main处理error. </p>
+</li>
+<li><p>对于需要进行原子操作的类型直接声明位<code>atomic.XX</code>类型, 避免使用<code>int、int32</code>等类型, 以减少忘记使用<code>atomic</code>包中方法来操作这个数据导致的非原子化问题.</p>
+</li>
+<li><p>避免使用可变全局变量, 而使用选择依赖注入的方式, 通过struct和new的方式生成唯一全局变量来操作</p>
+</li>
+<li><p>在结构体中避免使用嵌入式的类型, 内嵌的类型放在结构体顶部并空一行以隔开非嵌入类型, 而是使用委托方法来代理访问底层结构体的方法, 可以方便后续变更.</p>
+ <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// bad</span></span><br><span class="line"><span class="comment">// AbstractList 是各种实体列表的通用实现。</span></span><br><span class="line"><span class="keyword">type</span> AbstractList <span class="keyword">interface</span> &#123;</span><br><span class="line">  Add(Entity)</span><br><span class="line">  Remove(Entity)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ConcreteList 是一个实体列表。</span></span><br><span class="line"><span class="keyword">type</span> ConcreteList <span class="keyword">struct</span> &#123;</span><br><span class="line">  AbstractList</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+ <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// good</span></span><br><span class="line"><span class="comment">// ConcreteList 是一个实体列表。</span></span><br><span class="line"><span class="keyword">type</span> ConcreteList <span class="keyword">struct</span> &#123;</span><br><span class="line">  list AbstractList</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 添加将实体添加到列表中。 自己代理封装了</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *ConcreteList)</span> <span class="title">Add</span><span class="params">(e Entity)</span></span> &#123;</span><br><span class="line">  l.list.Add(e)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 移除从列表中移除实体。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *ConcreteList)</span> <span class="title">Remove</span><span class="params">(e Entity)</span></span> &#123;</span><br><span class="line">  l.list.Remove(e)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>尽可能初始化指定map/slice容量, <code>strconv</code>性能比<code>fmt</code>好, 尽可能一次性完成<code>string-&gt;[]byte</code>的操作, 这个转换操作是有开销代价的.</p>
+</li>
+<li><p>变量声明分组, 相似的分一组. 导入也分组, 标准库/第三方库/私有库分组, 一个文件中, 结构体-new-方法形式分成一组, 其他工具函数放在结尾</p>
+</li>
+<li><p>全局的未导出的变量使用<code>_</code>前缀以表明身份, 方便区分以及减少被局部同名变量覆盖的可能.</p>
+</li>
+<li><p><code>nil</code>可以是一个有效的<code>slice</code>, 可以通过<code>return</code>来返回, 避免返回空<code>slice</code>如:<code>[]int{}</code>, 对<code>slice</code>的判空使用<code>len()</code>, 声明用<code>var</code>优于<code>[]int{}</code></p>
+</li>
+<li><p>反引号可用于避免字符串转义, 不用手动加转义符</p>
+</li>
+<li><p>map初始化有初始值用<code>map[T1]T2{xx, xx..}</code>形式, 否则用<code>make</code>方式, 结构体用<code>=&amp;</code>或<code>=</code>初始化</p>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>学习笔记</category>
+      </categories>
+      <tags>
+        <tag>golang</tag>
+        <tag>学习笔记</tag>
+      </tags>
+  </entry>
 </search>
