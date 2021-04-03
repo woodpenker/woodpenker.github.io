@@ -207,6 +207,226 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2021/04/03/COW%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="woodpenker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="woodpenker's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/04/03/COW%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">Linux 5.11.4内核COW机制源码分析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-04-03 11:25:15 / Modified: 11:29:19" itemprop="dateCreated datePublished" datetime="2021-04-03T11:25:15+08:00">2021-04-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/04/03/COW%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90/" class="post-meta-item leancloud_visitors" data-flag-title="Linux 5.11.4内核COW机制源码分析" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2021/04/03/COW%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/04/03/COW%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>39k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>35 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>当进行fork时,父子进程将所有私有可写的物理页进行共享, 并将其对应的页表项设置为只读, 当任意一方尝试写时, 会引起COW的缺页异常, 异常处理程序会为写操作方分配一个新的物理页, 并将原来共享的物理页内容拷贝到新页中, 之后重新建立新页的页表映射到新的物理页, 并设置为可写. 如果在缺页异常处理时发现共享的页只有一个使用者, 则直接设置这个页面为可写即可.</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/04/03/COW%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%88%86%E6%9E%90/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2021/03/02/%E5%85%B3%E4%BA%8E%E5%8E%9F%E5%AD%90%E6%80%A7%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%AB%9E%E4%BA%89%E7%9A%84%E5%AD%A6%E4%B9%A0%E5%92%8C%E6%80%9D%E8%80%83/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="woodpenker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="woodpenker's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/03/02/%E5%85%B3%E4%BA%8E%E5%8E%9F%E5%AD%90%E6%80%A7%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%AB%9E%E4%BA%89%E7%9A%84%E5%AD%A6%E4%B9%A0%E5%92%8C%E6%80%9D%E8%80%83/" class="post-title-link" itemprop="url">关于原子性与数据竞争的学习和思考</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-03-02 23:25:12 / Modified: 23:36:22" itemprop="dateCreated datePublished" datetime="2021-03-02T23:25:12+08:00">2021-03-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/03/02/%E5%85%B3%E4%BA%8E%E5%8E%9F%E5%AD%90%E6%80%A7%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%AB%9E%E4%BA%89%E7%9A%84%E5%AD%A6%E4%B9%A0%E5%92%8C%E6%80%9D%E8%80%83/" class="post-meta-item leancloud_visitors" data-flag-title="关于原子性与数据竞争的学习和思考" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2021/03/02/%E5%85%B3%E4%BA%8E%E5%8E%9F%E5%AD%90%E6%80%A7%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%AB%9E%E4%BA%89%E7%9A%84%E5%AD%A6%E4%B9%A0%E5%92%8C%E6%80%9D%E8%80%83/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/03/02/%E5%85%B3%E4%BA%8E%E5%8E%9F%E5%AD%90%E6%80%A7%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%AB%9E%E4%BA%89%E7%9A%84%E5%AD%A6%E4%B9%A0%E5%92%8C%E6%80%9D%E8%80%83/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>365</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>1 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>关于原子性与数据竞争的学习和思考. 什么是原子操作? 怎么确保原子操作? 与数据竞争又是什么关系?</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/02/%E5%85%B3%E4%BA%8E%E5%8E%9F%E5%AD%90%E6%80%A7%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%AB%9E%E4%BA%89%E7%9A%84%E5%AD%A6%E4%B9%A0%E5%92%8C%E6%80%9D%E8%80%83/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2021/02/28/%E4%B8%80%E7%9B%B4%E5%9C%A8%E6%80%9D%E8%80%83%E5%9C%A8go%E4%B8%AD%E6%80%8E%E4%B9%88%E8%BF%9B%E8%A1%8C%E5%87%BD%E6%95%B0%E5%BC%8F%E9%82%A3%E6%A0%B7%E7%9A%84%E7%BC%96%E7%A8%8B,%20%E4%BB%A5%E5%AE%9E%E7%8E%B0%E7%B1%BB%E4%BC%BCFlink%E4%B8%AD%E7%9A%84%E9%82%A3%E7%A7%8D%E6%B5%81%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86.%20%E5%90%8E%E6%9D%A5%E6%83%B3%E4%BA%86%E6%83%B3,%20%E8%BF%99%E5%85%B6%E5%AE%9E%E4%B9%9F%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0mapreduce.%20%E4%BA%8E%E6%98%AF%E6%88%91%E6%9C%89%E4%BA%86%E5%A6%82%E4%B8%8B%E7%9A%84%E4%B8%80%E4%BA%9B%E4%BB%A3%E7%A0%81%E5%AE%9E%E9%AA%8C/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1101,232 +1321,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&&%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="woodpenker">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="woodpenker's blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&&%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/" class="post-title-link" itemprop="url">随机抽样/洗牌算法--Knuth-Durstenfeld Shuffle && 蓄水池算法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-09-14 17:20:43" itemprop="dateCreated datePublished" datetime="2020-09-14T17:20:43+08:00">2020-09-14</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-12 15:43:40" itemprop="dateModified" datetime="2020-11-12T15:43:40+08:00">2020-11-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">读书笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&&%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/" class="post-meta-item leancloud_visitors" data-flag-title="随机抽样/洗牌算法--Knuth-Durstenfeld Shuffle && 蓄水池算法" title="Views">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">Views: </span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine: </span>
-    
-    <a title="valine" href="/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&&%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&&%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.2k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>3 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Knuth-Durstenfeld Shuffle和蓄水池算法的学习理解与实现</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/09/14/%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95--Knuth-Durstenfeld%20Shuffle%20&&%20%E8%93%84%E6%B0%B4%E6%B1%A0%E7%AE%97%E6%B3%95/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="woodpenker">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="woodpenker's blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">go 语言设计与实现 学习笔记</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2020-09-12 21:57:41 / Modified: 22:11:03" itemprop="dateCreated datePublished" datetime="2020-09-12T21:57:41+08:00">2020-09-12</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">读书笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="post-meta-item leancloud_visitors" data-flag-title="go 语言设计与实现 学习笔记" title="Views">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">Views: </span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine: </span>
-    
-    <a title="valine" href="/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>57k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>52 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>go 语言设计与实现 学习笔记</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/09/12/go%20%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1396,20 +1390,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-count">27</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-count">11</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-count">25</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1445,12 +1439,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="Symbols count total">190k</span>
+    <span title="Symbols count total">229k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">2:53</span>
+    <span title="Reading time total">3:28</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
