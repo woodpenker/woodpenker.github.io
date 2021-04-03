@@ -2162,7 +2162,7 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
       </categories>
       <tags>
         <tag>golang</tag>
-        <tag>学习思考</tag>
+        <tag>学习</tag>
       </tags>
   </entry>
   <entry>
@@ -2353,8 +2353,8 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
       </categories>
       <tags>
         <tag>linux</tag>
-        <tag>学习笔记</tag>
         <tag>kernel</tag>
+        <tag>学习</tag>
       </tags>
   </entry>
 </search>
