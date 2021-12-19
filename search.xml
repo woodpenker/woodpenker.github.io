@@ -2515,4 +2515,134 @@ context 包中提供的 <code>context.Background、context.TODO、context.WithDe
         <tag>学习感悟</tag>
       </tags>
   </entry>
+  <entry>
+    <title>BPF之巅的学习--追踪系统历史与相关技术</title>
+    <url>/2021/12/05/BPF%E4%B9%8B%E5%B7%85%E7%9A%84%E5%AD%A6%E4%B9%A0--%E8%BF%BD%E8%B8%AA%E7%B3%BB%E7%BB%9F%E5%8E%86%E5%8F%B2%E4%B8%8E%E7%9B%B8%E5%85%B3%E6%8A%80%E6%9C%AF/</url>
+    <content><![CDATA[<h2 id="BPF之巅的学习–追踪系统历史与相关技术"><a href="#BPF之巅的学习–追踪系统历史与相关技术" class="headerlink" title="BPF之巅的学习–追踪系统历史与相关技术"></a>BPF之巅的学习–追踪系统历史与相关技术</h2><h2 id="早期与发展"><a href="#早期与发展" class="headerlink" title="早期与发展"></a>早期与发展</h2><p>最初的BPF是被开发来在BSD系统上使用的. 通过将BPF虚拟机的指令集定义的过滤器表达式传递给内核的解释器执行从而避免网络数据包从内核态到用户态的复制.  tcpdump就是这一技术的用户态程序. 扩展版的eBPF是在其基础上发展的, 提供了更多的寄存器和映射型存储. 现在大部分人说的BPF就是指eBPF.</p>
+<h2 id="相比perf以及内核模块"><a href="#相比perf以及内核模块" class="headerlink" title="相比perf以及内核模块"></a>相比perf以及内核模块</h2><p>相比perf在内核态就可以做过滤等统计操作, 减少了内核态向用户态的拷贝数据量.<br>相比内核模块要安全,且开发成本低, 不依赖特定的内核编译过程. 但是相比少了些任意使用内核内部函数的灵活性.</p>
+<h2 id="BPF的前端程序"><a href="#BPF的前端程序" class="headerlink" title="BPF的前端程序"></a>BPF的前端程序</h2><p>低级语言到高级语言: LLVM-&gt;BCC-&gt;bpftrace</p>
+<p>BCC与bpftrace在内部都使用LLVM中间表示形式和LLVM库来实现BPF的编译.</p>
+<p>Linux源码中有BPF指令的文档. 也可参考LLVM IR文档和Cilium BPF与XDP文档</p>
+<p>Linux4.15后可以通过bpftool来查看和操作BPF对象.<br>Linux4.17以后BCC和bpftrace都会使用<code>perf_event_open()</code>进行BPF程序的挂载.</p>
+<h2 id="BPF的API"><a href="#BPF的API" class="headerlink" title="BPF的API"></a>BPF的API</h2><p><code>bpf_probe_read()</code> 用于访问BPF之外的内存空间, 这个函数会进行安全检查并且禁止缺页中断的发生以保证probe上文中不会引发内核错误. x86上内核空间和用户空间没有重叠, 故通过地址读取不会存在问题. 而在SPARC上, 则必须通过<code>bpf_probe_read_kernel()</code>和<code>bpf_probe_read_user()</code>来区别使用.</p>
+<h2 id="BPF并发控制"><a href="#BPF并发控制" class="headerlink" title="BPF并发控制"></a>BPF并发控制</h2><p>Linux5.1中增加了spin lock(<code>bpf_spin_lock(), bpf_spin_unlock()</code>)来确保并发一致性. 而之前的版本则需要通过per-CPU的映射表来绕过并发问题. 其并发读写映射表的问题被成为”丢失的更新”问题.</p>
+<p><code>BPF_XADD</code>(互斥加操作), 映射中的映射机制等都可保证原子操作.<br><code>bpf_map_update_elem()</code>对常规的hash和LRU map的操作也是原子的.</p>
+<h2 id="BTF和BPF-CO-RE"><a href="#BTF和BPF-CO-RE" class="headerlink" title="BTF和BPF CO-RE"></a>BTF和BPF CO-RE</h2><p>BPF Type Format, 元数据格式, 可以内嵌到vmlinux的二进制中, 使得可以方便获得被跟踪的源代码信息.<br>BPF CO-RE是一次编译到处运行的意思, 旨在将BPF一次性编译位字节码分发执行, 避免在嵌入式环境需要安装LLVM和Clang的问题.</p>
+<h2 id="BPF限制"><a href="#BPF限制" class="headerlink" title="BPF限制"></a>BPF限制</h2><p>内核中无限循环是不允许的. 解决办法包括循环展开, 增加特定辅助函数等. Linux5.3支持受限的循环.<br>BPF栈大小不能超过MAX_BPF_STACK限制, 值位512.<br>BPF指令的总数据量早期为4096, 5.2以后限制为100万.</p>
+<h2 id="调用栈回溯"><a href="#调用栈回溯" class="headerlink" title="调用栈回溯"></a>调用栈回溯</h2><ol>
+<li>基于帧指针的回溯, 惯例: 调用返回地址永远位于RBP执行+偏移8的位置. gcc默认不启用, 需要通过<code>-fno-omit-frame-pointer</code>开启. 默认不启用的原因: i386中引入的, 为了将rbp寄存器释放出来使用以提升性能.编译器gcc vs icc性能比拼. 以及可以通过debug info来获得栈回溯等. x86_64体系结构上寄存器有16个了, 所以提升性能的收益并不明显了.</li>
+<li>调试信息debug info. DWARF格式的ELF调试信息, 通过<code>.eh_frame</code>和<code>.debug_frame</code>的ELF文件段提供. 缺点是文件过大, BPF也不支持(处理器消耗很大且可能需要读取没有加载到内存中的ELF信息, 使得在禁用中断的BPF上下文中实现不可能) BPF的前端BCC和bpftrace则支持使用调试信息.</li>
+<li>最后分支记录LBR. Intel处理器的特性, 支持有限深度的回溯4-32个, 通过硬件缓冲区记录, 没有额外开销. BPF不支持.</li>
+<li>ORC调试格式信息, Oops回滚能力. 相比DWARF对处理器要求低, 使用<code>.orc_unwind</code>和<code>.orc_unwind_ip</code>的ELF段. Linux内核已经支持. 可通过perf_callchain_kernel()获取.用户态还未支持.</li>
+</ol>
+<p>调用栈信息在内核中是以地址数值的形式记录的, 这些地址需要在用户态通过翻译成为对应的符号.</p>
+<h2 id="火焰图"><a href="#火焰图" class="headerlink" title="火焰图"></a>火焰图</h2><p>查看调用栈以及热点代码最方便. 其他变体: 冰柱图(Y轴反转), 火焰时序图, 差分火焰图(diff图, 对比两个跟踪结果)</p>
+<h2 id="kprobes"><a href="#kprobes" class="headerlink" title="kprobes"></a>kprobes</h2><p>插桩过程: </p>
+<ol>
+<li>将插入的目标地址的字节内容复制并保存</li>
+<li>以单步中断覆盖目标地址(x86_64是int3,如果优化则是jmp), </li>
+<li>执行到断点后跳转到处理函数执行, </li>
+<li>原始指令会接着执行. </li>
+<li>当不再需要时复制回原始的字节内容.<br>如果kprobe是一个Ftrace的已经插桩的地址, 则将kprobe注册为对应Ftrace处理器, 通过入口函数(x86上是gcc4.6是<strong>fentry</strong>)调用Ftrace跳到处理函数. 不再使用则会移移除Ftrace的注册.<br>如果是kretprobe, 则会对函数入口进行kprobe插桩,  通过kprobe将函数的返回地址保存后替换为一个trampoline函数, 当函数执行ret时会跳到对应的函数处理, 完成后再跳回来到之前的保存的地址. 不再使用则同样移除入口的kprobe.</li>
+</ol>
+<p>kprobe的处理过程可能需要禁止抢占或禁止中断.. 内核设计以些不允许kprobes的函数黑名单, 包括kprobes自己, 可以防止递归.</p>
+<p>kprobes使用jmp指令时, 会先调用<code>stop_machine()</code>函数来保证修改代码时其他CPU核心不会执行指令.</p>
+<p>最大的开销时对频繁调用的函数执行插桩是每次函数调用的小开销会叠加最终产生性能影响.</p>
+<p>kprobes在某些ARM64上不能正常工作, 因为其内核代码不允许修改.</p>
+<p>3种接口可访问kprobes:</p>
+<ol>
+<li>API, register_kprobes()等</li>
+<li>基于Ftrace的, 通过<code>/sys/kernel/debug/tracing/kprobe_events</code>写入字符串可起停kprobes</li>
+<li>通过perf_event_open(), 与perf工具一样</li>
+</ol>
+<h2 id="uprobes"><a href="#uprobes" class="headerlink" title="uprobes"></a>uprobes</h2><p>uprobes是基于文件的, 当一个可执行文件中的函数被跟踪时, 所有用到该文件的进程都会被插桩, 包括未启动的进程. 工作原理与kprobes类似.</p>
+<p>接口:</p>
+<ol>
+<li>基于Ftrace的. 通过<code>/sys/kernel/debug/tracing/uprobe_events</code>写入字符串可起停uprobes</li>
+<li>通过perf_event_open(), 与perf工具一样, 4.17以上版本支持.<br>内核中也有register_uprobe_events(), 但是不以API形式暴露.</li>
+</ol>
+<p>在频繁调用的函数上开销会很大, 如malloc/free. </p>
+<h2 id="tracepoints"><a href="#tracepoints" class="headerlink" title="tracepoints"></a>tracepoints</h2><p>内核的静态跟踪点 大约100+, 禁用开销为NOP开销, 且很稳定.</p>
+<p>跟踪点格式: “子系统:事件名”, 如sched:context_switch. </p>
+<p>原理:</p>
+<ol>
+<li>内核编译阶段插入5字节的nop指令(确保可以被替换为5字节的jmp)</li>
+<li>函数尾部会插入一个跟踪点处理函数, 也叫蹦床函数. 其会遍历存储跟踪点探针回调函数的数组.</li>
+<li>执行时, 当跟踪点被启用, 会在回调函数数组中插入一条新的跟踪回调函数, 以RCU形式同步更新.如果之前处于tracepoints处于禁用状态, nop指令会被重写为到蹦床函数的跳转指令.</li>
+<li>禁用时会以RCU形式删掉回调函数数组, 如果时最后一个则会写回nop. </li>
+</ol>
+<p>回调函数数组中可以依次插入多个回调函数, 这样可以支持多个回调函数在同一个追踪点上进行追踪处理, 其会被依次执行.</p>
+<p>BCC中可以通过<code>BPF.tracepoint_exists</code>来测试是否存在某个追踪点.</p>
+<p>原始跟踪点: BPF_RAW_TRACEPOINT, 向跟踪点暴露原始参数, 避免创建跟踪点参数的开销. 其性能要好于kprobes</p>
+<h2 id="USDT"><a href="#USDT" class="headerlink" title="USDT"></a>USDT</h2><p>许多应用使用<code>--enable-dtrace-probe</code>或<code>--with-dtrace</code>来开启. 通过systemtap-sdt-dev包提供头文件.或使用Facebook的Folly C++库.</p>
+<p>可通过readelf -n 来查看二进制的USDT探针以及获得二进制的偏移量. 通过段位置的起始地址+偏移量找到位置.</p>
+<p>编译时使用nop, 激活后被修改为int3. 触发后内核会执行中断响应触发BPF程序.</p>
+<h2 id="PMC"><a href="#PMC" class="headerlink" title="PMC"></a>PMC</h2><p>性能监控计数器(又称性能观测计数器PIC, CPU性能计数器CPC, 性能监控单元事件PMU events), 都指处理器上的硬件可编程计数器.</p>
+<p>任一时刻CPU中只允许固定数量的寄存器&lt;6个读取 PMC. 可通过循环采用的方式读取.</p>
+<p>PMC支持模式:</p>
+<ol>
+<li>计数</li>
+<li>溢出采样, 发生一定次数后通知内核</li>
+</ol>
+<h2 id="PEBC"><a href="#PEBC" class="headerlink" title="PEBC"></a>PEBC</h2><p>由于存在中断延时或乱序执行, 溢出采样不能精确记录数据. Intel的精确事件采样方案(PEBC)就是使用硬件缓冲区来记录PMC事件发生的正确指令指针, perf支持PEBC.</p>
+]]></content>
+      <categories>
+        <category>学习笔记</category>
+      </categories>
+      <tags>
+        <tag>学习笔记</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux内核中时间片驱动的调度是怎么完成的</title>
+    <url>/2021/12/05/Linux%E5%86%85%E6%A0%B8%E4%B8%AD%E6%97%B6%E9%97%B4%E7%89%87%E9%A9%B1%E5%8A%A8%E7%9A%84%E8%B0%83%E5%BA%A6%E6%98%AF%E6%80%8E%E4%B9%88%E5%AE%8C%E6%88%90%E7%9A%84?/</url>
+    <content><![CDATA[<h2 id="Linux内核中时间片驱动的调度是怎么完成的"><a href="#Linux内核中时间片驱动的调度是怎么完成的" class="headerlink" title="Linux内核中时间片驱动的调度是怎么完成的?"></a>Linux内核中时间片驱动的调度是怎么完成的?</h2><p>由于近来工作中涉及到调度, 就偶然想出来一个问题: Linux中内核调度CFS是获得task调度的时机的? 是定时更新下每个task的时间片以计算是否需调度? 还是通过让task决定自己主动让出CPU?</p>
+<p>Linux中并不区分进程和线程, 而是统一都是Task, 使用<code>struct task_struct</code>来定义. 这是一个庞大的数据结构. 创建线程和进程时, 根据不同的flag来设置子线/进程与父进/线程是否共享某些数据结构还是通过COW机制来创建新的字段.</p>
+<p>在<code>task_struct</code>中定义了虚拟时间片的概念, 当task的时间片用完以后, 会被调度出CPU, 这个过程是在哪里发生的呢? </p>
+<p>首先进程执行的时间片用完这一信息是通过高精度时钟来触发发出的, 计时到期后修改task的时间片信息, 如果发现时间片用完, 则设置<code>TIF_NEED_RESCHED</code>标志提示可以该task可以被抢占了.  之后某个时刻内核的scheduler相关逻辑被执行时会去检查这个Flag, 并执行schedule(). 被抢占的task可能处于用户态或者内核态(如果允许被抢占).</p>
+<p>高精度时钟计时是通过硬件来达到的, 很早期的设计是一个层级时间轮设计, 现在改用了红黑树的设计, 使用事件驱动模式. 这种方式避免了依赖系统硬件的tick来推动时间论运作, 从而提高了精度并模块耦合.</p>
+<p>参考:</p>
+<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/399441638" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/399441638</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/377065400" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/377065400</a></li>
+<li><a href="https://blog.csdn.net/baidu_24256693/article/details/79922620" target="_blank" rel="noopener">https://blog.csdn.net/baidu_24256693/article/details/79922620</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>学习笔记</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>学习笔记</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>伪共享.md</title>
+    <url>/2021/12/14/%E4%BC%AA%E5%85%B1%E4%BA%AB/</url>
+    <content><![CDATA[<h2 id="伪共享"><a href="#伪共享" class="headerlink" title="伪共享"></a>伪共享</h2><h3 id="什么是伪共享"><a href="#什么是伪共享" class="headerlink" title="什么是伪共享?"></a>什么是伪共享?</h3><p>CPU硬件访问内存通过Cache作为缓冲中介来加速访问, 而Cache与内存的一致性保证以Cache Line为最小单元进行操作, Cache又分级为1,2,3级缓冲, L1,L2是CPU独立的, L3是CPU共享的. Cache Line一般一行缓冲64B. 因此在并行执行场景下, 如果多个CPU同时访问Cache Line大小对应的内存数据区域, 即使它们访问的数据是不同的, 但是由于所访问的Cache Line是同一个, 也会导致数据脏, 从而使得Cache Line失效,  进而引起Cache Line的写回同步, 这种就是伪共享. (原本可能只需访问L1就可以的, 由于Cache Line失效, 数据需要同步会L3, 或重新从L3或内存中读取, 从而减慢了代码的执行速率). </p>
+<p>换种说法是:<br>对缓存行中的单个变量进行修改了，导致整个缓存行数据也就失效了，并且，会导致其他CPU的含有被改动的共享变量的缓存行也失效了，就是所谓的伪共享问题。</p>
+<p>引用Intel的说明:</p>
+<blockquote>
+<p>为了保证多cache下数据一致性，Intel处理器（是多处理器架构）服从MESI（Modified/Exclusive/Shared/Invalid）协议【对cache line的状态标记，更多关于MESI的信息可以阅读参考链接2】。当cache line第一次加载进来之后，处理器将cache line标记为 Exclusive【Exclusive表示这行数据有效，数据和内存中的数据一致，数据只存在于本Cache中。】，只要这个cache line被标记为 Exclusive，后续的加载（subsequent loads【应该指读内存指令】）能够免费地（【无内存开销】）使用这个cache line中的数据。如果这个处理器在总线上看到这个cache line被其他处理器加载，这个处理器会将这个cache line标记为Shared【Shared表示这行数据有效，数据和内存中的数据一致，数据存在于很多Cache中】。如果这个处理器写（store【应该是指CPU写】）了一个标记为’S’【 Shared的缩写】的cache line，这个cache line被标记为 Modified【Modified表示这行数据有效，数据被修改了，和内存中的数据不一致，数据只存在于本Cache中】，同时，这个处理器向所有其他处理器发送’Invalid’ cache line消息【因为该写操作导致其他CPU的cache中该数据失效】。如果处理器看到被标记为M的cache line被其他处理器访问，则这个处理器将该cache line写回主存，并将cache line标记为Shared【此时，所有其他CPU的后续访问该数据时，读到的是新的数据】，其他处理器访问这个cache line时，将会导致一个cache miss【它们要么是从未被加载到cache过，要么是从Shared状态变成了Invalid状态】。<br>当cache line被标记为Invalid时，处理器之间频繁地协调【应指通过MESI协议维护cache一致性】，导致cache line数据被写回内存并随后又加载到cache中。伪共享加剧了协调过程【应指伪共享情况下，协调发生得更频繁了】，并显著降低了应用程序性能。</p>
+</blockquote>
+<h3 id="避免伪共享的办法"><a href="#避免伪共享的办法" class="headerlink" title="避免伪共享的办法"></a>避免伪共享的办法</h3><ol>
+<li>使用线程局部数据拷贝, 编译器或手动将可能发生伪共享的连续存储改为线程/进程的本地数据, 线程局部数据拷贝能够被频繁读取和修改，并且只需将结果完全拷贝回去一次即可.</li>
+<li>通过人为添加padding填充来以空间换时间, 使得可能同时被访问的数据不再同一个Cache Line中, 一般保证&gt;64B.<br>使用编译指示，来强制使每一个变量对齐。下面的代码显式了编译器使用__declspec( align(n) ) 此处n=64，按照cache line边界对齐。<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">__declspec (align(64)) int thread1_global_variable;</span><br><span class="line">__declspec (align(64)) int thread2_global_variable;</span><br></pre></td></tr></table></figure>
+或者自己在数据结构的尾部填入padding, 或自己强制数组对齐到64B的倍数.</li>
+</ol>
+<h3 id="何时使用"><a href="#何时使用" class="headerlink" title="何时使用"></a>何时使用</h3><p>一般为了避免伪共享带来的维护成本高收益低, 可忽略不处理, 只有在性能要求高的场景才需要考虑避免, 以空间的损失换来时间的降低.</p>
+<p>参考:</p>
+<ol>
+<li><a href="https://www.cnblogs.com/apprentice89/p/3347720.html" target="_blank" rel="noopener">https://www.cnblogs.com/apprentice89/p/3347720.html</a></li>
+<li><a href="https://www.cnblogs.com/cyfonly/p/5800758.html" target="_blank" rel="noopener">https://www.cnblogs.com/cyfonly/p/5800758.html</a></li>
+<li><a href="https://www.cnblogs.com/crazymakercircle/p/13909102.html" target="_blank" rel="noopener">https://www.cnblogs.com/crazymakercircle/p/13909102.html</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>学习笔记</category>
+      </categories>
+      <tags>
+        <tag>学习笔记</tag>
+      </tags>
+  </entry>
 </search>
