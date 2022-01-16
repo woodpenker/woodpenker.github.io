@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"woodpenker.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":true,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="TBB并发库的部分代码阅读学习笔记, 重点分析parallel_for的实现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TBB并发库代码学习">
+<meta property="og:url" content="https://woodpenker.github.io/2022/01/16/TBB%E5%B9%B6%E5%8F%91%E5%BA%93%E4%BB%A3%E7%A0%81%E5%AD%A6%E4%B9%A0/index.html">
+<meta property="og:site_name" content="woodpenker&#39;s blog">
+<meta property="og:description" content="TBB并发库的部分代码阅读学习笔记, 重点分析parallel_for的实现">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-01-16T10:02:18.000Z">
+<meta property="article:modified_time" content="2022-01-16T10:04:44.016Z">
+<meta property="article:author" content="woodpenker">
+<meta property="article:tag" content="学习笔记">
+<meta property="article:tag" content="C++">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://woodpenker.github.io/2022/01/16/TBB%E5%B9%B6%E5%8F%91%E5%BA%93%E4%BB%A3%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>TBB并发库代码学习 | woodpenker's blog</title>
+  
+    <script>
+      function sendPageView() {
+        if (CONFIG.hostname !== location.hostname) return;
+        var uid = localStorage.getItem('uid') || (Math.random() + '.' + Math.random());
+        localStorage.setItem('uid', uid);
+        navigator.sendBeacon('https://www.google-analytics.com/collect', new URLSearchParams({
+          v  : 1,
+          tid: 'UA-156045206-1',
+          cid: uid,
+          t  : 'pageview',
+          dp : encodeURIComponent(location.pathname)
+        }));
+      }
+      document.addEventListener('pjax:complete', sendPageView);
+      sendPageView();
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">woodpenker's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">while(life!=0){study++;}</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/woodpenker" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://woodpenker.github.io/2022/01/16/TBB%E5%B9%B6%E5%8F%91%E5%BA%93%E4%BB%A3%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="woodpenker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="woodpenker's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          TBB并发库代码学习
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-01-16 18:02:18 / Modified: 18:04:44" itemprop="dateCreated datePublished" datetime="2022-01-16T18:02:18+08:00">2022-01-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/01/16/TBB%E5%B9%B6%E5%8F%91%E5%BA%93%E4%BB%A3%E7%A0%81%E5%AD%A6%E4%B9%A0/" class="post-meta-item leancloud_visitors" data-flag-title="TBB并发库代码学习" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/01/16/TBB%E5%B9%B6%E5%8F%91%E5%BA%93%E4%BB%A3%E7%A0%81%E5%AD%A6%E4%B9%A0/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/16/TBB%E5%B9%B6%E5%8F%91%E5%BA%93%E4%BB%A3%E7%A0%81%E5%AD%A6%E4%B9%A0/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>16k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>14 mins.</span>
+            </span>
+            <div class="post-description">TBB并发库的部分代码阅读学习笔记, 重点分析parallel_for的实现</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="TBB并发库代码学习"><a href="#TBB并发库代码学习" class="headerlink" title="TBB并发库代码学习"></a>TBB并发库代码学习</h1><h1 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h1><p>TBB是Intel开发的一个用于并行计算的C++组件库, 现已开源为OneTBB. TBB的全称为Thread Building Blocks.  他有一个优势就是即使你不是写并发线程的高手, 也可以轻松地通过其完成并行任务的执行. 其引用领域适合HPC等CPU密集的计算场景.</p>
+<h1 id="简单使用"><a href="#简单使用" class="headerlink" title="简单使用"></a>简单使用</h1><p>举个使用的例子最容易理解, 以其最常用的方法 <code>parallel_for</code> 为例:</p>
+<p>如果我有一个数组矩阵, 想并行地对每个元素进行计算(纯CPU计算). 串行的执行方式可能如下</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i &lt; taskSize; ++i) &#123;</span><br><span class="line">    do_task(task[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这种方式在数据量小的时候可以被接受, 但是一旦taskSize很大了, 则会非常影响执行效率并且浪费多处理的CPU资源. 大家一般都会考虑多线程的方式完成.<br>如果使用TBB的话, 代码可以这么写:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tbb::parallel_for(<span class="number">0</span>, taskSize, [&amp;](<span class="keyword">int</span> i) &#123;</span><br><span class="line"> do_task(task[i]); </span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>这样就非常容易地将执行任务分发到多个CPU上进行, 并且其负载是动态均衡的. 由于在工作中用到它, 并且要搞清楚其内部的一些机制(怎么做负载均衡,怎么分配和调度任务), 因而有了本文的一些学习总结.</p>
+<h1 id="代码学习"><a href="#代码学习" class="headerlink" title="代码学习"></a>代码学习</h1><h2 id="架构原理理解"><a href="#架构原理理解" class="headerlink" title="架构原理理解"></a>架构原理理解</h2><p>学习新的代码首先肯定是要搞清楚其设计的架构,有哪些概念, 以及总体的代码框架大概是什么样子. 我这里学习的代码是TBB 2020的版本. </p>
+<p>首先在Intel的TBB专家的建议下, 我阅读了<code>Pro TBB</code>这本书. 从书中大致了解的其设计结构和一些概念名称. 这里也推荐想学习的人先阅读下这本书(参考中给出了下载地址) . TBB的工作线程worker是会在第一次使用时自动启动的, 并且在使用结束后可以继续被后续并发计算请求复用. 它有一个<code>global worker pool/market</code>的概念, 用于存放哪些空闲的没事可做的线程. 而当我们的代码执行到<code>tbb::parallel_for</code>这里时, 就会生成一个<code>task_arena</code>, 这里发起这个并发任务的线程被成为<code>master thread/main thread</code>, 空闲的worker就会被调度到这个<code>task_arena</code>中去获取任务并完成计算任务. <code>task_arena</code>中的可以容纳的worker数量(slot)为<code>master thread</code> 可用的CPU资源的数量减1, 而<code>master thread</code>自己也在其中占一个slot. 当一个worker发现在这个<code>arena</code>中无任务可做时就会离开返回<code>global thead pool</code>中睡眠直到有新的<code>arena</code>再次召唤. 在执行时每个线程都会将任务做适当的切分成多个小的任务块放到自己的本地任务队列中待依次执行, 而新进入的thread则会从其他的thread的任务队列中偷取一部分过来, 完成后再尝试偷取直到没有任务可做.</p>
+<p>下载源代码后可见其使用的是<code>cmake</code>工具进行编译的. 在<code>build</code>中存在一个<code>build.py</code>的脚本可以快速编译lib库. 其中主要头文件都在<code>include</code>中, 实现代码都在<code>src</code>下.</p>
+<h2 id="parallel-for"><a href="#parallel-for" class="headerlink" title="parallel_for"></a>parallel_for</h2><p>由于我们的使用场景没有涉及到flow, 这里我重点看下最基本的算法组件<code>parallel_for</code>的实现.</p>
+<p>头文件是<code>include/tbb/parallel_for.h</code>, 就从这里看起, 看下我们调用<code>tbb::parallel_for</code>后都发生了什么. 头文件中定义了大量的<code>tbb::parallel_for</code>入口函数的模板, 例如最简单的入口:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Index, <span class="keyword">typename</span> Function&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">parallel_for</span><span class="params">(Index first, Index last, <span class="keyword">const</span> Function&amp; f)</span> </span>&#123;</span><br><span class="line">    parallel_for_impl&lt;Index,Function,<span class="keyword">const</span> auto_partitioner&gt;(first, last, <span class="keyword">static_cast</span>&lt;Index&gt;(<span class="number">1</span>), f, auto_partitioner()); <span class="comment">// 这里会默认step为1, 分割器为auto_partitioner</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Index, <span class="keyword">typename</span> Function&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">parallel_for</span><span class="params">(Index first, Index last, Index <span class="built_in">step</span>, <span class="keyword">const</span> Function&amp; f)</span> </span>&#123;</span><br><span class="line">    parallel_for_impl&lt;Index,Function,<span class="keyword">const</span> auto_partitioner&gt;(first, last, <span class="built_in">step</span>, f, auto_partitioner());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果第四个参数不指定TBB的调度器的任务分割器, 就会默认使用<code>auto_partitioner</code>, 其他可以使用的分割器有:<code>simple_partitioner</code>, <code>static_partitioner</code>, <code>affinity_partitioner</code>.分割器代表着如何进行任务拆分和分配, 是负载均衡的保证, 后面会单独进行代码分析. </p>
+<p>所有的<code>tbb::parallel_for</code>最终都会调用<code>parallel_for_impl</code>, 这里由于支持<code>task_group</code>会存在编译时选择而有两个<code>parallel_for_impl</code>, 我们暂时忽略<code>task_group</code>的版本.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Index, <span class="keyword">typename</span> Function, <span class="keyword">typename</span> Partitioner&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">parallel_for_impl</span><span class="params">(Index first, Index last, Index <span class="built_in">step</span>, <span class="keyword">const</span> Function&amp; f, Partitioner&amp; partitioner)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">step</span> &lt;= <span class="number">0</span> )</span><br><span class="line">        internal::throw_exception(internal::eid_nonpositive_step); <span class="comment">// throws std::invalid_argument</span></span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (last &gt; first) &#123;</span><br><span class="line">        <span class="comment">// Above "else" avoids "potential divide by zero" warning on some platforms</span></span><br><span class="line">        Index <span class="built_in">end</span> = (last - first - Index(<span class="number">1</span>)) / <span class="built_in">step</span> + Index(<span class="number">1</span>);</span><br><span class="line">        <span class="function">tbb::blocked_range&lt;Index&gt; <span class="title">range</span><span class="params">(<span class="keyword">static_cast</span>&lt;Index&gt;(<span class="number">0</span>), <span class="built_in">end</span>)</span></span>; <span class="comment">// 创建tbb::blocked_range对象</span></span><br><span class="line">        internal::parallel_for_body&lt;Function, Index&gt; body(f, first, step); // 创建parallel_for_body结构提, 这个是对模板对象Body的具体实现, 每个算法都会自行实现一个.</span><br><span class="line">        tbb::parallel_for(range, body, partitioner); <span class="comment">//调用算法内部的parallel_for方法执行算法的并行计算</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从<code>parallel_for_body</code>的定义中可以看到其执行过程和串行无差别:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">parallel_for_body( <span class="keyword">const</span> Function&amp; _func, Index&amp; _begin, Index&amp; _step )</span><br><span class="line">            : my_func(_func), my_begin(_begin), my_step(_step) &#123;&#125;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">operator</span><span class="params">()</span><span class="params">( <span class="keyword">const</span> tbb::blocked_range&lt;Index&gt;&amp; r )</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">            <span class="comment">// A set of local variables to help the compiler with vectorization of the following loop.</span></span><br><span class="line">            Index b = r.<span class="built_in">begin</span>();</span><br><span class="line">            Index e = r.<span class="built_in">end</span>();</span><br><span class="line">            Index ms = my_step;</span><br><span class="line">            Index k = my_begin + b*ms;</span><br><span class="line">...</span><br><span class="line">            <span class="keyword">for</span> ( Index i = b; i &lt; e; ++i, k += ms ) &#123;</span><br><span class="line">                my_func( k );</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>而内部实现的<code>parallel_for</code>则是类似下面的那样的定义, 即调用<code>start_for</code>的<code>run</code>完成并发启动.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Range, <span class="keyword">typename</span> Body&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">parallel_for</span><span class="params">( <span class="keyword">const</span> Range&amp; range, <span class="keyword">const</span> Body&amp; body, <span class="keyword">const</span> auto_partitioner&amp; partitioner )</span> </span>&#123;</span><br><span class="line">    internal::start_for&lt;Range,Body,<span class="keyword">const</span> auto_partitioner&gt;::<span class="built_in">run</span>(range,body,partitioner);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>查看<code>start_for</code>的定义, 其继承自<code>task</code>, <code>run</code>的内部实现如下:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">(  <span class="keyword">const</span> Range&amp; range, <span class="keyword">const</span> Body&amp; body, Partitioner&amp; partitioner )</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span>( !range.empty() ) &#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> !__TBB_TASK_GROUP_CONTEXT || TBB_JOIN_OUTER_TASK_GROUP</span></span><br><span class="line">                start_for&amp; a = *<span class="keyword">new</span>(task::allocate_root()) start_for(range,body,partitioner); <span class="comment">// 在arena中生成一个task任务, </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">                <span class="comment">// Bound context prevents exceptions from body to affect nesting or sibling algorithms,</span></span><br><span class="line">                <span class="comment">// and allows users to handle exceptions safely by wrapping parallel_for in the try-block.</span></span><br><span class="line">                <span class="function">task_group_context <span class="title">context</span><span class="params">(PARALLEL_FOR)</span></span>;</span><br><span class="line">                start_for&amp; a = *<span class="keyword">new</span>(task::allocate_root(context)) start_for(range,body,partitioner);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span> <span class="comment">/* __TBB_TASK_GROUP_CONTEXT &amp;&amp; !TBB_JOIN_OUTER_TASK_GROUP */</span></span></span><br><span class="line">		<span class="comment">// REGION BEGIN</span></span><br><span class="line">                fgt_begin_algorithm( tbb::internal::PARALLEL_FOR_TASK, (<span class="keyword">void</span>*)&amp;context ); <span class="comment">// intel的trace工具断点</span></span><br><span class="line">                task::spawn_root_and_wait(a); <span class="comment">// 分派任务arena, 触发其他线程的scheduler加入来完成并发任务.</span></span><br><span class="line">                fgt_end_algorithm( (<span class="keyword">void</span>*)&amp;context );</span><br><span class="line">		<span class="comment">// REGION END</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>在这个头文件中还会定义<code>void run_body( Range &amp;r )</code>, <code>void offer_work(typename Partitioner::split_type&amp; split_obj)</code>和<code>task* start_for&lt;Range,Body,Partitioner&gt;::execute()</code>这些方法, 这些方法会在调度器和分割器中被调用到,后续用到再回来看.</p>
+<h2 id="schedule和partition"><a href="#schedule和partition" class="headerlink" title="schedule和partition"></a>schedule和partition</h2><p><code>task::spawn_root_and_wait</code>定义在<code>include/tbb/task.h</code>中, 内部会调用<code>tbb::internal::generic_scheduler::spawn_root_and_wait</code>并最终调用scheduler的<code>local_spawn_root_and_wait</code>. 其实现在<code>src/tbb/scheduler.cpp</code>中:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">generic_scheduler::local_spawn_root_and_wait</span><span class="params">( task* first, task*&amp; next )</span> </span>&#123;</span><br><span class="line">...</span><br><span class="line">    <span class="function">auto_empty_task <span class="title">dummy</span><span class="params">( __TBB_CONTEXT_ARG(<span class="keyword">this</span>, first-&gt;prefix().context) )</span></span>; <span class="comment">//dummy即是task</span></span><br><span class="line">    internal::reference_count n = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>( task* t=first; ; t=t-&gt;prefix().next ) &#123;</span><br><span class="line">        ++n;</span><br><span class="line">...</span><br><span class="line">        t-&gt;prefix().parent = &amp;dummy;</span><br><span class="line">        <span class="keyword">if</span>( &amp;t-&gt;prefix().next==&amp;next ) <span class="keyword">break</span>;</span><br><span class="line">...</span><br><span class="line">    &#125;</span><br><span class="line">    dummy.prefix().ref_count = n+<span class="number">1</span>; <span class="comment">// 如果这个引用计数为1则任务完成</span></span><br><span class="line">    <span class="keyword">if</span>( n&gt;<span class="number">1</span> ) <span class="comment">// 对于单个parallel_for任务, 这里n == 1.</span></span><br><span class="line">        local_spawn( first-&gt;prefix().next, next );</span><br><span class="line">    local_wait_for_all( dummy, first ); <span class="comment">// 这里调用后, 其他worker就会加入到arena中, 并也调用其scheduler的local_spawn_root_and_wait方法来执行task任务.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>local_wait_for_all</code>的定义位于<code>src/tbb/custom_scheduler.h</code>中, 代码很多, 重点看下非条件编译的代码和核心的逻辑:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> SchedulerTraits&gt;</span><br><span class="line"><span class="keyword">void</span> custom_scheduler&lt;SchedulerTraits&gt;::local_wait_for_all( task&amp; parent, task* child ) &#123;</span><br><span class="line">...</span><br><span class="line">    task* t = child;</span><br><span class="line">...</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> TBB_USE_EXCEPTIONS  <span class="comment">// 如果使用exception会通过条件编译加上一层try..catch</span></span></span><br><span class="line">    <span class="comment">// Infinite safeguard EH loop</span></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span> <span class="comment">/* TBB_USE_EXCEPTIONS */</span> <span class="comment">// 下面的注释解释地很明白了. 外层循环从全局队列中获得任务, 中间循环从本地任务队列中偷取任务, 内层执行任务.</span></span></span><br><span class="line">    <span class="comment">// Outer loop receives tasks from global environment (via mailbox, FIFO queue(s),</span></span><br><span class="line">    <span class="comment">// and by  stealing from other threads' task pools).</span></span><br><span class="line">    <span class="comment">// All exit points from the dispatch loop are located in its immediate scope.</span></span><br><span class="line">    <span class="keyword">for</span>(;;) &#123;</span><br><span class="line">        <span class="comment">// Middle loop retrieves tasks from the local task pool.</span></span><br><span class="line">        <span class="keyword">for</span>(;;) &#123;</span><br><span class="line">            <span class="comment">// Inner loop evaluates tasks coming from nesting loops and those returned</span></span><br><span class="line">            <span class="comment">// by just executed tasks (bypassing spawn or enqueue calls).</span></span><br><span class="line">            <span class="keyword">if</span> ( !process_bypass_loop( context_guard, __TBB_ISOLATION_ARG(t, isolation) ) ) &#123; <span class="comment">// 这里的process_bypass_loop是核心功能函数</span></span><br><span class="line">...</span><br><span class="line">            <span class="comment">// Check "normal" exit condition when parent's work is done.</span></span><br><span class="line">            <span class="keyword">if</span> ( parent.prefix().ref_count == <span class="number">1</span> ) &#123;</span><br><span class="line">                __TBB_ASSERT( !cleanup, <span class="literal">NULL</span> );</span><br><span class="line">                __TBB_control_consistency_helper(); <span class="comment">// on ref_count</span></span><br><span class="line">                ITT_NOTIFY( sync_acquired, &amp;parent.prefix().ref_count );</span><br><span class="line">                <span class="keyword">goto</span> done;</span><br><span class="line">            &#125;</span><br><span class="line">...</span><br><span class="line">            <span class="comment">// Retrieve the task from local task pool.</span></span><br><span class="line">...</span><br><span class="line">            t = is_task_pool_published() ? get_task( __TBB_ISOLATION_EXPR( isolation ) ) : <span class="literal">NULL</span>;</span><br><span class="line">...</span><br><span class="line">            <span class="keyword">if</span> ( !t ) <span class="comment">// No tasks in the local task pool. Go to stealing loop.</span></span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;; <span class="comment">// end of local task pool retrieval loop</span></span><br><span class="line">...</span><br><span class="line">        t = receive_or_steal_task( __TBB_ISOLATION_ARG( parent.prefix().ref_count, isolation ) ); <span class="comment">// 通过这里来完成任务窃取及负载均衡的逻辑</span></span><br><span class="line">        <span class="keyword">if</span> ( !t ) &#123;</span><br><span class="line">...</span><br><span class="line">            <span class="keyword">goto</span> done;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="comment">// end of infinite stealing loop</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> TBB_USE_EXCEPTIONS</span></span><br><span class="line">    __TBB_ASSERT( <span class="literal">false</span>, <span class="string">"Must never get here"</span> );</span><br><span class="line">    &#125; <span class="comment">// end of try-block</span></span><br><span class="line">    TbbCatchAll( my_innermost_running_task-&gt;prefix().context );</span><br><span class="line">...</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span> <span class="comment">/* TBB_USE_EXCEPTIONS */</span></span></span><br><span class="line">done:  <span class="comment">// 执行到这里的worker就会完成arena中任务的执行并退出</span></span><br><span class="line">...</span><br><span class="line">    <span class="keyword">if</span> ( !ConcurrentWaitsEnabled(parent) ) &#123;</span><br><span class="line">        <span class="keyword">if</span> ( parent.prefix().ref_count != <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="comment">// This is a worker that was revoked by the market.</span></span><br><span class="line">            __TBB_ASSERT( worker_outermost_level(),</span><br><span class="line">                <span class="string">"Worker thread exits nested dispatch loop prematurely"</span> );</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        parent.prefix().ref_count = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>process_bypass_loop</code>也定义在同一个文件中, 简化核心逻辑后代码如下, 从中可以看到其执行过程中会不断地尝试获得一个task, 并调用其<code>execute</code>方法执行, 并且会返回下一个执行的task任务直到没有任务可以执行.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> SchedulerTraits&gt;</span><br><span class="line"><span class="keyword">bool</span> custom_scheduler&lt;SchedulerTraits&gt;::process_bypass_loop(</span><br><span class="line">            context_guard_helper&lt;<span class="comment">/*report_tasks=*/</span>SchedulerTraits::itt_possible&gt;&amp; context_guard,</span><br><span class="line">            __TBB_ISOLATION_ARG(task* t, isolation_tag isolation) )</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">while</span> ( t ) &#123;</span><br><span class="line">...</span><br><span class="line">        task* t_next = <span class="literal">NULL</span>;</span><br><span class="line">        my_innermost_running_task = t;</span><br><span class="line">        t-&gt;prefix().owner = <span class="keyword">this</span>;</span><br><span class="line">        t-&gt;prefix().state = task::executing;</span><br><span class="line">...</span><br><span class="line">        &#123;</span><br><span class="line">...</span><br><span class="line">            t_next = t-&gt;execute();</span><br><span class="line">...</span><br><span class="line">            <span class="keyword">if</span> (t_next) &#123;</span><br><span class="line">...</span><br><span class="line">            &#125; <span class="comment">// if there is bypassed task</span></span><br><span class="line">        &#125;</span><br><span class="line">...</span><br><span class="line">        t = t_next;</span><br><span class="line">    &#125; <span class="comment">// end of scheduler bypass loop</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而这个<code>execute</code>方法是一个虚拟方法, 最终就是调用了<code>parallel_for</code>中<code>start_for</code>的<code>execute</code>方法.跳回去看这个方法则主要功能是调用分配器的<code>execute</code>方法完成执行动作.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//! execute task for parallel_for</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Range, <span class="keyword">typename</span> Body, <span class="keyword">typename</span> Partitioner&gt;</span><br><span class="line">task* start_for&lt;Range,Body,Partitioner&gt;::execute() &#123;</span><br><span class="line">    my_partition.check_being_stolen( *<span class="keyword">this</span> );</span><br><span class="line">    my_partition.execute(*<span class="keyword">this</span>, my_range);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>所有分配器都定义在<code>include/tbb/partitioner.h</code>中了. 其中用了多态的实现方式, 基类是<code>partition_type_base</code>, 有两个<code>execute</code>的具体实现, 分布是<code>simple_partition_type</code>和<code>partitiontype_base</code>的. 由于<code>simple_partition</code>的分割功能定义就很简单所以会单独实现一个简单的执行过程. 我们关系<code>auto_partition</code>是如何切分任务的, 那么就直接看base中的实现:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> StartType, <span class="keyword">typename</span> Range&gt;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">execute</span><span class="params">(StartType &amp;start, Range &amp;range)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// The algorithm in a few words ([]-denotes calls to decision methods of partitioner):</span></span><br><span class="line">        <span class="comment">// [If this task is stolen, adjust depth and divisions if necessary, set flag].</span></span><br><span class="line">        <span class="comment">// If range is divisible &#123;</span></span><br><span class="line">        <span class="comment">//    Spread the work while [initial divisions left];</span></span><br><span class="line">        <span class="comment">//    Create trap task [if necessary];</span></span><br><span class="line">        <span class="comment">// &#125;</span></span><br><span class="line">        <span class="comment">// If not divisible or [max depth is reached], execute, else do the range pool part</span></span><br><span class="line">        <span class="keyword">if</span> ( range.is_divisible() ) &#123; <span class="comment">// 检查range对象是否还能被切分</span></span><br><span class="line">            <span class="keyword">if</span> ( self().is_divisible() ) &#123; <span class="comment">// 检查是否还需要再切割任务</span></span><br><span class="line">                <span class="keyword">do</span> &#123; <span class="comment">// split until is divisible</span></span><br><span class="line">                    <span class="keyword">typename</span> Partition::split_type split_obj = self().<span class="keyword">template</span> get_split&lt;Range&gt;();</span><br><span class="line">                    start.offer_work( split_obj ); <span class="comment">//调用具体算法实现的offer_work生成一个新的task分发出去</span></span><br><span class="line">                &#125; <span class="keyword">while</span> ( range.is_divisible() &amp;&amp; self().is_divisible() );</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        self().work_balance(start, range); <span class="comment">// 调用work_balance进行负载的平衡</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line"><span class="comment">// 位于include/tbb/parallel_for.h中实现</span></span><br><span class="line"><span class="comment">//! spawn right task, serves as callback for partitioner</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">offer_work</span><span class="params">(<span class="keyword">typename</span> Partitioner::split_type&amp; split_obj)</span> </span>&#123;</span><br><span class="line">    spawn( *<span class="keyword">new</span>( allocate_sibling(<span class="keyword">static_cast</span>&lt;task*&gt;(<span class="keyword">this</span>), <span class="keyword">sizeof</span>(start_for)) ) start_for(*<span class="keyword">this</span>, split_obj) );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而<code>work_balance</code>的代码功能是在<code>struct dynamic_grainsize_mode : Mode</code>中实现的, 大致意图就是不断循环检查是否可以切分任务并同时执行任务, 直到所有任务完成或被取消: </p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> StartType, <span class="keyword">typename</span> Range&gt;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">work_balance</span><span class="params">(StartType &amp;start, Range &amp;range)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>( !range.is_divisible() || !self().max_depth() ) &#123;</span><br><span class="line">            start.run_body( range ); <span class="comment">// simple partitioner goes always here</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123; <span class="comment">// do range pool</span></span><br><span class="line">            internal::range_vector&lt;Range, range_pool_size&gt; range_pool(range);</span><br><span class="line">            <span class="keyword">do</span> &#123; <span class="comment">// 不断尝试切分任务并同时执行任务直到所有任务完成.</span></span><br><span class="line">                range_pool.split_to_fill(self().max_depth()); <span class="comment">// fill range pool</span></span><br><span class="line">                <span class="keyword">if</span>( self().check_for_demand( start ) ) &#123; <span class="comment">// 通过check_for_demand检查执行时间是否满足大于40000个时钟cycle的设置, 如果任务执行时间过小, 那么任务就不再进行切割以避免浪费调度开销. 这种短时任务直接串行执行性能反而会更好.</span></span><br><span class="line">                    <span class="keyword">if</span>( range_pool.<span class="built_in">size</span>() &gt; <span class="number">1</span> ) &#123;</span><br><span class="line">                        start.offer_work( range_pool.front(), range_pool.front_depth() );</span><br><span class="line">                        range_pool.pop_front();</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span>( range_pool.is_divisible(self().max_depth()) ) <span class="comment">// was not enough depth to fork a task</span></span><br><span class="line">                        <span class="keyword">continue</span>; <span class="comment">// note: next split_to_fill() should split range at least once</span></span><br><span class="line">                &#125;</span><br><span class="line">                start.run_body( range_pool.back() ); <span class="comment">// 调用算法的run_body方法执行具体任务</span></span><br><span class="line">                range_pool.pop_back();</span><br><span class="line">            &#125; <span class="keyword">while</span>( !range_pool.empty() &amp;&amp; !start.is_cancelled() );</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">check_for_demand</span><span class="params">( task &amp;t )</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>( pass == my_delay ) &#123;</span><br><span class="line">            <span class="keyword">if</span>( self().my_divisor &gt; <span class="number">1</span> ) <span class="comment">// produce affinitized tasks while they have slot in array</span></span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">// do not do my_max_depth++ here, but be sure range_pool is splittable once more</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span>( self().my_divisor &amp;&amp; my_max_depth ) &#123; <span class="comment">// make balancing task</span></span><br><span class="line">                self().my_divisor = <span class="number">0</span>; <span class="comment">// once for each task; depth will be decreased in align_depth()</span></span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span>( flag_task::is_peer_stolen(t) ) &#123;</span><br><span class="line">                my_max_depth += __TBB_DEMAND_DEPTH_ADD; <span class="comment">// __TBB_DEMAND_DEPTH_ADD是1</span></span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>( <span class="built_in">begin</span> == my_delay ) &#123;</span><br><span class="line">...</span><br><span class="line">            my_dst_tsc = __TBB_time_stamp() + __TBB_task_duration(); <span class="comment">// 这里__TBB_time_stamp()返回的是40000</span></span><br><span class="line">            my_delay = <span class="built_in">run</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>( <span class="built_in">run</span> == my_delay ) &#123;</span><br><span class="line">            <span class="keyword">if</span>( __TBB_time_stamp() &lt; my_dst_tsc ) &#123;</span><br><span class="line">                __TBB_ASSERT(my_max_depth &gt; <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">                 my_max_depth--; <span class="comment">// increase granularity since tasks seem having too small work</span></span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            my_delay = pass;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">...</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line"><span class="comment">//! Run body for range, serves as callback for partitioner</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">run_body</span><span class="params">( Range &amp;r )</span> </span>&#123;</span><br><span class="line">    fgt_alg_begin_body( tbb::internal::PARALLEL_FOR_TASK, (<span class="keyword">void</span> *)<span class="keyword">const_cast</span>&lt;Body*&gt;(&amp;(<span class="keyword">this</span>-&gt;my_body)), (<span class="keyword">void</span>*)<span class="keyword">this</span> );</span><br><span class="line">    my_body( r ); <span class="comment">// 调用parallel_for_body完成任务的执行.</span></span><br><span class="line">    fgt_alg_end_body( (<span class="keyword">void</span> *)<span class="keyword">const_cast</span>&lt;Body*&gt;(&amp;(<span class="keyword">this</span>-&gt;my_body)) );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="parallel-for-each-parallel-do和task-group"><a href="#parallel-for-each-parallel-do和task-group" class="headerlink" title="parallel_for_each,parallel_do和task_group"></a>parallel_for_each,parallel_do和task_group</h2><p><code>parallel_for_each</code>查看其代码发现其实现依赖了<code>parallel_for</code>和<code>parallel_do</code>, 而<code>parallel_do</code>也是同样实现了<code>execute</code>,<code>run</code>等抽象方法, 具体逻辑类似就不再赘述.</p>
+<p><code>task_group</code>的执行大体与上面一致, 不过其使用上不同:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">tbb::task_group task_group;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i =<span class="number">0</span>;i&lt;taskSize;i++) &#123;</span><br><span class="line">    task_group.<span class="built_in">run</span>([&amp;] &#123; </span><br><span class="line">      do_task(tasks[i]);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line">task_group.wait();</span><br></pre></td></tr></table></figure>
+<p>因此其调度是通过wait: <code>my_root-&gt;wait_for_all();</code>, run: <code>task::spawn( *prepare_task&lt; internal::task_handle_task&lt;F&gt; &gt;(h) );</code>来完成的. </p>
+<h2 id="worker的调度"><a href="#worker的调度" class="headerlink" title="worker的调度"></a>worker的调度</h2><p>上面代码阅读中会产生一个疑问, 为何主线程执行<code>local_wait_for_all</code>后, 其他可用的空闲worker就会加入到arena中工作呢? 这就要看每个worker是如何实现的了. 其实每个worker都会在调用<code>run</code>启动后,不断的调用<code>market::process</code>去接收任务并加入执行, 其内部通过调用<code>arena::process</code>最终完成worker的调度和执行逻辑.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 代码位于src/tbb/private_server.cpp中</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">private_worker::run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">...</span><br><span class="line">    ::rml::job&amp; j = *my_client.create_one_job();</span><br><span class="line">    <span class="keyword">while</span>( my_state!=st_quit ) &#123;</span><br><span class="line">        <span class="keyword">if</span>( my_server.my_slack&gt;=<span class="number">0</span> ) &#123;</span><br><span class="line">            my_client.<span class="built_in">process</span>(j); <span class="comment">// 调用 market::process</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 等待直到有任务时被唤醒</span></span><br><span class="line">...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 代码位于src/tbb/market.cpp中</span></span><br><span class="line"><span class="keyword">void</span> market::<span class="built_in">process</span>( job&amp; j ) &#123;</span><br><span class="line">    generic_scheduler&amp; s = <span class="keyword">static_cast</span>&lt;generic_scheduler&amp;&gt;(j);</span><br><span class="line">    <span class="comment">// s.my_arena can be dead. Don't access it until arena_in_need is called</span></span><br><span class="line">    arena *a = s.my_arena;</span><br><span class="line">...</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">2</span>; ++i) &#123;</span><br><span class="line">        <span class="keyword">while</span> ( (a = arena_in_need(a)) ) &#123;</span><br><span class="line">            a-&gt;<span class="built_in">process</span>(s); <span class="comment">// 如果有新的arena产生, 则调用其process方法, s就是使用的scheduler类型</span></span><br><span class="line">            a = <span class="literal">NULL</span>; <span class="comment">// to avoid double checks in arena_in_need(arena*) for the same priority level</span></span><br><span class="line">        &#125;</span><br><span class="line">...</span><br><span class="line">    &#125;</span><br><span class="line">...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 代码位于src/tbb/arena.cpp中</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">arena::process</span><span class="params">( generic_scheduler&amp; s )</span> </span>&#123;</span><br><span class="line">...</span><br><span class="line">    <span class="keyword">size_t</span> index = occupy_free_slot&lt;<span class="comment">/*as_worker*/</span><span class="literal">true</span>&gt;( s );</span><br><span class="line">...</span><br><span class="line">    <span class="keyword">if</span> ( index == out_of_arena )</span><br><span class="line">        <span class="keyword">goto</span> quit; <span class="comment">// 超出arena的slot数量限制就不再加入其中</span></span><br><span class="line">...</span><br><span class="line">    s.attach_arena( <span class="keyword">this</span>, index, <span class="comment">/*is_master*/</span><span class="literal">false</span> );</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Task pool can be marked as non-empty if the worker occupies the slot left by a master.</span></span><br><span class="line">    <span class="keyword">if</span> ( s.my_arena_slot-&gt;task_pool != EmptyTaskPool ) &#123;</span><br><span class="line">...</span><br><span class="line">        s.local_wait_for_all( *s.my_dummy_task, <span class="literal">NULL</span> ); <span class="comment">// 开始执行scheduler的local_wait_for_all, 其与主线程逻辑相同</span></span><br><span class="line">...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> ( ;; ) &#123;</span><br><span class="line">...</span><br><span class="line">        <span class="keyword">if</span> ( is_recall_requested() )</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="comment">// Try to steal a task.</span></span><br><span class="line">        <span class="comment">// Passing reference count is technically unnecessary in this context,</span></span><br><span class="line">        <span class="comment">// but omitting it here would add checks inside the function.</span></span><br><span class="line">        task* t = s.receive_or_steal_task( __TBB_ISOLATION_ARG( s.my_dummy_task-&gt;prefix().ref_count, no_isolation ) ); <span class="comment">// 如果还有任务没完成, 则会偷取其他线程的任务帮其执行直到无事可做</span></span><br><span class="line">        <span class="keyword">if</span> (t) &#123;</span><br><span class="line">...</span><br><span class="line">            s.local_wait_for_all(*s.my_dummy_task,t);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">...</span><br><span class="line">quit:</span><br><span class="line">...</span><br><span class="line">    on_thread_leaving&lt;ref_worker&gt;(); <span class="comment">// 离开对应的arena</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="代码修改"><a href="#代码修改" class="headerlink" title="代码修改"></a>代码修改</h1><p>通过以上阅读理解, 我对代码进行了一些修改, 给Body添加了一些tracer以在调用TBB时自动记录<code>run_body</code>和<code>task</code>的数量, 并记录每个task执行的平均时间以及整个算法执行的时间.主要修改的位置就是上面<code>parallel_for.h</code>中的<code>run</code>, <code>run_body</code>, <code>offer_work</code>和<code>execute</code>, 具体代码就不展示了. 最终测试发现当并发进行1000个元素的数组的单个执行时间小于1us的并发任务时, body的数量可能只有200-300, task的数量则更少100+. 这里可以理解为每个task内的body都是串行执行的, task并行执行, 而一个body内执行多个元素的串行执行. 这个现象也是很有意思的, lib库从多个层面上尽可能地平衡并行数量和单个耗时.</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>通过阅读TBB代码发现其代码使用了大量的抽象概念, 将调度的逻辑和算法的逻辑分开, 并划分成多个执行层次. 代码的可扩展性和灵活性都很强, 但同时阅读起来的难度也相对大一些. 通过看代码也发现了其调度的时间几乎就是代码的常数执行时间, 其层层都注意进行负载的均衡处理, 尽可能地保证任务的执行时长被均匀地分给每个worker承担, 并且在多个线程同时发起tbb任务(只有这个arena中有任务worker就不走,会一直工作直到完成所有任务, 多个线程同时提交给同一个arena的任务并不存在worker层面的区分)或者嵌套发起tbb任务(子任务会被加入同一个arena被worker领取处理)时都依然可以很容易地负载均衡. 同时自动分区的算法还注重任务数量和执行时间的平衡, 如果单个body执行时间过短, 就不会再切分执行, 改成串行的方式完成以降低调度分配任务的开销. 整个这个执行过程是一个动态平衡的过程, 刚开始只有主线程自己工作, 随着其他worker的加入, 任务被不断二分到其他worker, 并且谁先完成就继续窃取别人的任务继续工作直到大家都完成.<br>可以说TBB库非常适合HPC计算场景下压榨CPU性能.</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li>书本Pro TBB, <a href="https://link.springer.com/book/10.1007/978-1-4842-4398-5" target="_blank" rel="noopener">https://link.springer.com/book/10.1007/978-1-4842-4398-5</a></li>
+<li>代码库: <a href="https://github.com/oneapi-src/oneTBB" target="_blank" rel="noopener">https://github.com/oneapi-src/oneTBB</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="tag"># 学习笔记</a>
+              <a href="/tags/C/" rel="tag"># C++</a>
+          </div>
+
+        
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<link rel="stylesheet" href="/css/highlight/styles/github.css">
+
+<!--
+ <script src="https://utteranc.es/client.js"
+        repo="woodpenker/woodpenker.github.io"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script> 
+-->
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/01/01/%E7%BC%96%E8%AF%91%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/" rel="prev" title="C/C++代码编译相关知识总结">
+      <i class="fa fa-chevron-left"></i> C/C++代码编译相关知识总结
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#TBB并发库代码学习"><span class="nav-number">1.</span> <span class="nav-text">TBB并发库代码学习</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#基本介绍"><span class="nav-number">2.</span> <span class="nav-text">基本介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#简单使用"><span class="nav-number">3.</span> <span class="nav-text">简单使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#代码学习"><span class="nav-number">4.</span> <span class="nav-text">代码学习</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#架构原理理解"><span class="nav-number">4.1.</span> <span class="nav-text">架构原理理解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#parallel-for"><span class="nav-number">4.2.</span> <span class="nav-text">parallel_for</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#schedule和partition"><span class="nav-number">4.3.</span> <span class="nav-text">schedule和partition</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#parallel-for-each-parallel-do和task-group"><span class="nav-number">4.4.</span> <span class="nav-text">parallel_for_each,parallel_do和task_group</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#worker的调度"><span class="nav-number">4.5.</span> <span class="nav-text">worker的调度</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#代码修改"><span class="nav-number">5.</span> <span class="nav-text">代码修改</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">7.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">woodpenker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">woodpenker</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">271k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:07</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : true,
+      appId      : 'TQssKihDiGGbSY1kYhITVjH6-gzGzoHsz',
+      appKey     : 'nR7QfbpY2Pp701SrxCfINdpm',
+      placeholder: "Go go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : true,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
